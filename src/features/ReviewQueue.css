@@ -1,3 +1,19 @@
+.rq-teamsection {
+  margin-bottom: var(--lt-space-6);
+}
+.rq-teamsection__title {
+  display: flex;
+  align-items: center;
+  gap: var(--lt-space-2);
+  font-size: var(--lt-fs-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--lt-text-muted);
+  margin: 0 0 var(--lt-space-3);
+  padding-bottom: var(--lt-space-2);
+  border-bottom: 1px solid var(--lt-color-border);
+}
+
 .rq-list {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));

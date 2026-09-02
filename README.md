@@ -25,19 +25,27 @@ npm run preview          # serve the production build (no API — static only)
 
 ## Features
 
-- **Submit an idea** — anyone can propose an initiative (title, focus area,
-  team, summary). Lands in the review queue as `idea`.
-- **Review queue** — approve an idea onto the Backlog, or reject it with a
-  note. Gated behind a shared password (see below).
+- **Submit an idea** — anyone can propose an initiative (full roadmap fields:
+  title, focus area, team, summary, current/future state, success metrics,
+  impacted teams) plus their name. Lands in the review queue as `idea`,
+  with the submission date recorded automatically.
+- **Review queue** — grouped by team. Approve moves an idea straight to the
+  Backlog (everything starts in the Backlog); reject requires a reason and
+  moves it to the Rejected archive. Gated behind a shared password (below).
+- **Rejected** — an archive of rejected ideas with the reviewer's reason
+  next to each.
 - **Roadmap** — a Gantt-style view grouped by Focus Area → Team, with a
-  Backlog column plus Jan–Dec. Click any bar to edit an initiative's fields,
+  Backlog column plus Jan–Dec, filterable by focus area, team, and month.
+  Hovering an initiative's name shows its summary, current state, future
+  state, and focus area. Status is one of Backlog (red) / In Development
+  (green) / Completed (black). Click any bar to edit an initiative's fields,
   status, and schedule, or add one directly. Gated behind the same password.
 - **Focus Areas & Teams** — manage the taxonomy that both pickers read from.
 
 ## Password gate
 
 Mutating actions (review decisions, scheduling/editing initiatives, taxonomy
-CRUD) are gated behind a shared password, set in
+CRUD) are gated behind a shared password (`prettyplease`), set in
 `src/lib/PasswordGate.jsx` (`GATE_PASSWORD`). This is a lightweight
 UX gate, not real authentication — the API itself doesn't enforce it.
 Idea submission itself stays open to anyone.
@@ -57,11 +65,12 @@ src/
   components/ui/          Component library: Button, Card, Badge, Input,
                           Select, Modal, Icon (+ ui.css, barrel index)
   features/
-    RoadmapPlanner.jsx    Tab shell: Roadmap / Submit / Review / Taxonomy
+    RoadmapPlanner.jsx    Tab shell: Roadmap / Submit / Review / Rejected / Taxonomy
     RoadmapGantt.jsx      The Gantt view + initiative edit modal trigger
     InitiativeModal.jsx   Create/edit form for one initiative
     IdeaForm.jsx          Public idea submission
-    ReviewQueue.jsx       Approve/reject queue
+    ReviewQueue.jsx       Approve/reject queue, grouped by team
+    RejectedArchive.jsx   Rejected ideas + reviewer reason
     ManageTaxonomy.jsx    Focus Area / Team CRUD
   lib/
     PasswordGate.jsx      Shared mutation-guard modal

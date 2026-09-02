@@ -1,7 +1,7 @@
-/**
+﻿/**
  * v1 seed data, transcribed directly from the roadmap screenshot that
  * kicked off this project (no source workbook was available to import).
- * Edit through the app from here on — re-running `npm run db:seed` resets
+ * Edit through the app from here on -- re-running `npm run db:seed` resets
  * to this baseline.
  */
 
@@ -57,7 +57,7 @@ export const INITIATIVES = [
     futureState: "Reusable, governed audience cohorts are available in-product and to go-to-market teams for precise targeting.",
     successMetrics: "Increase campaign relevance and qualified pipeline.",
     impactedTeams: ["Marketing", "Data Science"],
-    status: "in_progress",
+    status: "in_development",
     year: YEAR,
     startMonth: 8,
     endMonth: 9,
@@ -71,7 +71,7 @@ export const INITIATIVES = [
     futureState: "Core APIs operate with error budgets, actionable alerts, automated failover, and consistent reliability standards.",
     successMetrics: "Maintain 99.95% availability; decrease incident recovery time.",
     impactedTeams: ["All Product Teams"],
-    status: "in_progress",
+    status: "in_development",
     year: YEAR,
     startMonth: 8,
     endMonth: 8,
@@ -141,7 +141,7 @@ export const INITIATIVES = [
     futureState: "Customers complete core workspace tasks on mobile through fast, reliable, and accessible native experiences.",
     successMetrics: "Increase mobile task completion and weekly active users.",
     impactedTeams: ["Design", "Support"],
-    status: "in_progress",
+    status: "in_development",
     year: YEAR,
     startMonth: 7,
     endMonth: 8,
@@ -169,7 +169,7 @@ export const INITIATIVES = [
     futureState: "Certified metrics have clear definitions, owners, freshness signals, and a single discovery experience.",
     successMetrics: "Increase trusted-report usage; decrease metric discrepancies.",
     impactedTeams: ["Finance", "Analytics"],
-    status: "in_progress",
+    status: "in_development",
     year: YEAR,
     startMonth: 7,
     endMonth: 9,
@@ -197,7 +197,7 @@ export const INITIATIVES = [
     futureState: "Intent-aware automation classifies, routes, and prioritizes requests so agents focus on complex customer needs.",
     successMetrics: "Decrease first-response time and manual triage effort.",
     impactedTeams: ["Support", "Customer Success"],
-    status: "in_progress",
+    status: "in_development",
     year: YEAR,
     startMonth: 7,
     endMonth: 12,
@@ -211,7 +211,7 @@ export const INITIATIVES = [
     futureState: "A reusable agent framework provides secure orchestration, evaluation, monitoring, and policy controls.",
     successMetrics: "Increase agent delivery speed; maintain security and observability.",
     impactedTeams: ["Engineering", "Security"],
-    status: "in_progress",
+    status: "in_development",
     year: YEAR,
     startMonth: 9,
     endMonth: 11,
@@ -239,7 +239,7 @@ export const INITIATIVES = [
     futureState: "Service owners receive near-real-time unit-cost visibility and prioritized optimization recommendations.",
     successMetrics: "Decrease unit cost; increase tagged-spend coverage.",
     impactedTeams: ["Finance", "Engineering"],
-    status: "in_progress",
+    status: "in_development",
     year: YEAR,
     startMonth: 9,
     endMonth: 12,
@@ -267,7 +267,7 @@ export const INITIATIVES = [
     futureState: "Expanded SSO, SCIM, and admin controls meet enterprise readiness with streamlined provisioning and governance.",
     successMetrics: "Increase enterprise readiness and sales-cycle velocity.",
     impactedTeams: ["IT", "Sales Engineering"],
-    status: "in_progress",
+    status: "in_development",
     year: YEAR,
     startMonth: 9,
     endMonth: 10,

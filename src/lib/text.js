@@ -13,8 +13,7 @@ export const MONTH_NAMES = [
 export const STATUS_LABEL = {
   idea: "Idea",
   backlog: "Backlog",
-  planned: "Planned",
-  in_progress: "In Progress",
+  in_development: "In Development",
   completed: "Completed",
   rejected: "Rejected",
 };

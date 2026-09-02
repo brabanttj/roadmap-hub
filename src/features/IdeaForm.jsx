@@ -5,19 +5,25 @@ import "./IdeaForm.css";
 
 const FRIENDLY_ERROR = "Something went wrong. Please try again.";
 
+const EMPTY_FORM = {
+  title: "",
+  focusArea: "",
+  team: "",
+  summary: "",
+  currentState: "",
+  futureState: "",
+  successMetrics: "",
+  impactedTeams: "",
+  submittedBy: "",
+};
+
 export default function IdeaForm({ focusAreas, teams, onSubmitted }) {
-  const [form, setForm] = useState({
-    title: "",
-    focusArea: "",
-    team: "",
-    summary: "",
-    submittedBy: "",
-  });
+  const [form, setForm] = useState(EMPTY_FORM);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [done, setDone] = useState(false);
 
-  const valid = form.title.trim();
+  const valid = form.title.trim() && form.submittedBy.trim();
   const upd = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
   const updText = (k) => (e) => setForm((f) => ({ ...f, [k]: capitalizeFirst(e.target.value) }));
 
@@ -30,27 +36,17 @@ export default function IdeaForm({ focusAreas, teams, onSubmitted }) {
       const res = await fetch("/api/ideas", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify({
+          ...form,
+          impactedTeams: form.impactedTeams
+            .split(",")
+            .map((t) => t.trim())
+            .filter(Boolean),
+        }),
       });
       const j = await res.json();
       if (!res.ok || !j.ok) throw new Error(j.error || FRIENDLY_ERROR);
-      onSubmitted({
-        id: j.id,
-        focusArea: form.focusArea,
-        team: form.team,
-        title: form.title.trim(),
-        summary: form.summary.trim(),
-        currentState: "",
-        futureState: "",
-        successMetrics: "",
-        impactedTeams: [],
-        status: "idea",
-        completed: false,
-        year: null,
-        startMonth: null,
-        endMonth: null,
-        submittedBy: form.submittedBy.trim(),
-      });
+      onSubmitted(j.initiative);
       setDone(true);
     } catch (err) {
       setError(err.message || FRIENDLY_ERROR);
@@ -60,7 +56,7 @@ export default function IdeaForm({ focusAreas, teams, onSubmitted }) {
   };
 
   const submitAnother = () => {
-    setForm({ title: "", focusArea: "", team: "", summary: "", submittedBy: "" });
+    setForm(EMPTY_FORM);
     setDone(false);
   };
 
@@ -70,7 +66,8 @@ export default function IdeaForm({ focusAreas, teams, onSubmitted }) {
         <IllustrationBadge icon="lightBulb" tone="green" size={72} />
         <p className="cf-empty__title">Idea submitted</p>
         <p className="cf-empty__sub">
-          It's in the review queue now — a reviewer will approve or reject it.
+          It's in the review queue now — a reviewer will approve it to the
+          backlog or reject it with a reason.
         </p>
         <div className="if-done__actions">
           <Button variant="accent" onClick={submitAnother}>
@@ -86,7 +83,7 @@ export default function IdeaForm({ focusAreas, teams, onSubmitted }) {
       <h2 className="if-card__title">Submit an idea</h2>
       <p className="rb-intro">
         Anyone can submit — a reviewer will approve it onto the backlog or
-        reject it with a note.
+        reject it with a reason.
       </p>
       {error && (
         <div className="mt-banner" role="alert">
@@ -128,14 +125,51 @@ export default function IdeaForm({ focusAreas, teams, onSubmitted }) {
             placeholder="What is it, and why does it matter?"
             value={form.summary}
             onChange={updText("summary")}
-            rows={3}
+            rows={2}
+          />
+        </label>
+        <label className="lt-field">
+          <span className="lt-field__label">Current state</span>
+          <textarea
+            className="lt-input if-form__textarea"
+            placeholder="What's the problem today?"
+            value={form.currentState}
+            onChange={updText("currentState")}
+            rows={2}
+          />
+        </label>
+        <label className="lt-field">
+          <span className="lt-field__label">Future state</span>
+          <textarea
+            className="lt-input if-form__textarea"
+            placeholder="What does it look like once this ships?"
+            value={form.futureState}
+            onChange={updText("futureState")}
+            rows={2}
+          />
+        </label>
+        <label className="lt-field">
+          <span className="lt-field__label">Success metrics</span>
+          <textarea
+            className="lt-input if-form__textarea"
+            placeholder="How will you know it worked?"
+            value={form.successMetrics}
+            onChange={updText("successMetrics")}
+            rows={2}
           />
         </label>
         <Input
-          label="Your name"
+          label="Impacted teams (comma-separated)"
+          placeholder="e.g. Sales, Support"
+          value={form.impactedTeams}
+          onChange={upd("impactedTeams")}
+        />
+        <Input
+          label="Your name *"
           placeholder="So reviewers know who to follow up with"
           value={form.submittedBy}
           onChange={upd("submittedBy")}
+          required
         />
         <div className="if-form__actions">
           <Button type="submit" variant="accent" disabled={!valid || submitting}>

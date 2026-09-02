@@ -3,6 +3,7 @@ import { Card } from "../components/ui/index.js";
 import RoadmapGantt from "./RoadmapGantt.jsx";
 import IdeaForm from "./IdeaForm.jsx";
 import ReviewQueue from "./ReviewQueue.jsx";
+import RejectedArchive from "./RejectedArchive.jsx";
 import ManageTaxonomy from "./ManageTaxonomy.jsx";
 import "./RoadmapPlanner.css";
 
@@ -42,6 +43,7 @@ export default function RoadmapPlanner() {
     setInitiatives((prev) => prev.filter((i) => i.id !== id));
 
   const ideaCount = initiatives.filter((i) => i.status === "idea").length;
+  const rejectedCount = initiatives.filter((i) => i.status === "rejected").length;
 
   if (loading) {
     return (
@@ -102,6 +104,15 @@ export default function RoadmapPlanner() {
         <button
           type="button"
           role="tab"
+          aria-selected={view === "rejected"}
+          className={`cf-tab${view === "rejected" ? " cf-tab--on" : ""}`}
+          onClick={() => setView("rejected")}
+        >
+          Rejected <span className="cf-tab__n">{rejectedCount}</span>
+        </button>
+        <button
+          type="button"
+          role="tab"
           aria-selected={view === "taxonomy"}
           className={`cf-tab${view === "taxonomy" ? " cf-tab--on" : ""}`}
           onClick={() => setView("taxonomy")}
@@ -129,8 +140,12 @@ export default function RoadmapPlanner() {
       {view === "review" && (
         <ReviewQueue
           initiatives={initiatives.filter((i) => i.status === "idea")}
+          teams={teams}
           onUpsert={upsertInitiative}
         />
+      )}
+      {view === "rejected" && (
+        <RejectedArchive initiatives={initiatives.filter((i) => i.status === "rejected")} />
       )}
       {view === "taxonomy" && (
         <ManageTaxonomy

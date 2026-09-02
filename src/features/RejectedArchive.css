@@ -1,0 +1,26 @@
+.ra-card {
+  border-left: 3px solid var(--lt-red);
+}
+.ra-reason {
+  padding-top: var(--lt-space-3);
+  border-top: 1px solid var(--lt-color-border);
+}
+.ra-reason__label {
+  display: block;
+  font-size: var(--lt-fs-xs);
+  font-weight: var(--lt-fw-black);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--lt-red);
+  margin-bottom: 4px;
+}
+.ra-reason__text {
+  font-size: var(--lt-fs-sm);
+  color: var(--lt-text-secondary);
+  line-height: 1.5;
+  margin: 0 0 4px;
+}
+.ra-reason__by {
+  font-size: var(--lt-fs-xs);
+  color: var(--lt-text-muted);
+}

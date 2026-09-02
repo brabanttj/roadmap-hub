@@ -3,7 +3,19 @@ import pool from "./db.mjs";
 
 const router = express.Router();
 
-const STATUSES = ["idea", "backlog", "planned", "in_progress", "completed", "rejected"];
+const STATUSES = ["idea", "backlog", "in_development", "completed", "rejected"];
+
+// Shared RETURNING/SELECT column list -- every initiative-shaped query below
+// returns exactly this shape to the client.
+const INITIATIVE_COLUMNS = `
+  id, focus_area AS "focusArea", team, title, summary,
+  current_state AS "currentState", future_state AS "futureState",
+  success_metrics AS "successMetrics", impacted_teams AS "impactedTeams",
+  status, completed, year, start_month AS "startMonth", end_month AS "endMonth",
+  submitted_by AS "submittedBy", submitted_at AS "submittedAt",
+  reviewed_by AS "reviewedBy", reviewed_at AS "reviewedAt",
+  reviewer_notes AS "reviewerNotes", sort_order AS "sortOrder"
+`;
 
 function toMonth(v) {
   const n = Number(v);
@@ -16,16 +28,7 @@ router.get("/bootstrap", async (req, res) => {
     const [focusAreasRes, teamsRes, initiativesRes] = await Promise.all([
       pool.query(`SELECT id, name FROM focus_areas ORDER BY sort_order, name`),
       pool.query(`SELECT id, name FROM teams ORDER BY sort_order, name`),
-      pool.query(
-        `SELECT id, focus_area AS "focusArea", team, title, summary,
-                current_state AS "currentState", future_state AS "futureState",
-                success_metrics AS "successMetrics", impacted_teams AS "impactedTeams",
-                status, completed, year, start_month AS "startMonth", end_month AS "endMonth",
-                submitted_by AS "submittedBy", submitted_at AS "submittedAt",
-                reviewed_by AS "reviewedBy", reviewed_at AS "reviewedAt",
-                reviewer_notes AS "reviewerNotes", sort_order AS "sortOrder"
-         FROM initiatives ORDER BY sort_order, id`
-      ),
+      pool.query(`SELECT ${INITIATIVE_COLUMNS} FROM initiatives ORDER BY sort_order, id`),
     ]);
     res.json({
       ok: true,
@@ -40,23 +43,38 @@ router.get("/bootstrap", async (req, res) => {
 });
 
 // ---- POST /api/ideas --------------------------------------------------------
-// Public idea submission — no password gate. Lands as status='idea', pending
-// review.
+// Public idea submission — no password gate. Takes the same fields as a full
+// initiative (minus status/schedule, which review/scheduling set later).
+// Lands as status='idea', pending review. submitted_at defaults to now() --
+// that's the recorded submission date.
 router.post("/ideas", async (req, res) => {
-  const title = String(req.body?.title || "").trim();
-  const focusArea = String(req.body?.focusArea || "").trim();
-  const team = String(req.body?.team || "").trim();
-  const summary = String(req.body?.summary || "").trim();
-  const submittedBy = String(req.body?.submittedBy || "").trim();
+  const b = req.body || {};
+  const title = String(b.title || "").trim();
   if (!title) return res.status(400).json({ ok: false, error: "Title is required" });
+  if (!String(b.submittedBy || "").trim()) {
+    return res.status(400).json({ ok: false, error: "Your name is required" });
+  }
   try {
     const { rows } = await pool.query(
-      `INSERT INTO initiatives (focus_area, team, title, summary, status, submitted_by, sort_order)
-       VALUES ($1, $2, $3, $4, 'idea', $5, (SELECT COALESCE(MAX(sort_order), 0) + 1 FROM initiatives))
-       RETURNING id`,
-      [focusArea, team, title, summary, submittedBy]
+      `INSERT INTO initiatives (
+         focus_area, team, title, summary, current_state, future_state, success_metrics,
+         impacted_teams, status, submitted_by, sort_order
+       ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,'idea',$9,
+         (SELECT COALESCE(MAX(sort_order), 0) + 1 FROM initiatives))
+       RETURNING ${INITIATIVE_COLUMNS}`,
+      [
+        String(b.focusArea || "").trim(),
+        String(b.team || "").trim(),
+        title,
+        String(b.summary || "").trim(),
+        String(b.currentState || "").trim(),
+        String(b.futureState || "").trim(),
+        String(b.successMetrics || "").trim(),
+        Array.isArray(b.impactedTeams) ? b.impactedTeams.map((t) => String(t).trim()).filter(Boolean) : [],
+        String(b.submittedBy).trim(),
+      ]
     );
-    res.json({ ok: true, id: rows[0].id });
+    res.json({ ok: true, initiative: rows[0] });
   } catch (e) {
     console.error(e);
     res.status(500).json({ ok: false, error: String(e.message || e) });
@@ -64,7 +82,8 @@ router.post("/ideas", async (req, res) => {
 });
 
 // ---- POST /api/initiatives/:id/review ---------------------------------------
-// Approve moves idea -> backlog; reject moves idea -> rejected.
+// Approve moves idea -> backlog (everything starts in the backlog); reject
+// moves idea -> rejected and requires a reason, shown in the Rejected archive.
 router.post("/initiatives/:id/review", async (req, res) => {
   const id = Number(req.params.id);
   const decision = String(req.body?.decision || "");
@@ -74,13 +93,16 @@ router.post("/initiatives/:id/review", async (req, res) => {
   if (!["approve", "reject"].includes(decision)) {
     return res.status(400).json({ ok: false, error: "decision must be 'approve' or 'reject'" });
   }
+  if (decision === "reject" && !notes) {
+    return res.status(400).json({ ok: false, error: "A rejection reason is required" });
+  }
   const nextStatus = decision === "approve" ? "backlog" : "rejected";
   try {
     const { rows } = await pool.query(
       `UPDATE initiatives
        SET status = $1, reviewed_by = $2, reviewed_at = now(), reviewer_notes = $3
        WHERE id = $4 AND status = 'idea'
-       RETURNING id, status`,
+       RETURNING ${INITIATIVE_COLUMNS}`,
       [nextStatus, reviewedBy, notes, id]
     );
     if (!rows.length) {
@@ -112,13 +134,7 @@ router.post("/initiatives", async (req, res) => {
          impacted_teams, status, completed, year, start_month, end_month, submitted_by, sort_order
        ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,
          (SELECT COALESCE(MAX(sort_order), 0) + 1 FROM initiatives))
-       RETURNING id, focus_area AS "focusArea", team, title, summary,
-                current_state AS "currentState", future_state AS "futureState",
-                success_metrics AS "successMetrics", impacted_teams AS "impactedTeams",
-                status, completed, year, start_month AS "startMonth", end_month AS "endMonth",
-                submitted_by AS "submittedBy", submitted_at AS "submittedAt",
-                reviewed_by AS "reviewedBy", reviewed_at AS "reviewedAt",
-                reviewer_notes AS "reviewerNotes", sort_order AS "sortOrder"`,
+       RETURNING ${INITIATIVE_COLUMNS}`,
       [
         String(b.focusArea || "").trim(),
         String(b.team || "").trim(),
@@ -173,13 +189,7 @@ router.put("/initiatives/:id", async (req, res) => {
          start_month     = $12,
          end_month       = $13
        WHERE id = $14
-       RETURNING id, focus_area AS "focusArea", team, title, summary,
-                current_state AS "currentState", future_state AS "futureState",
-                success_metrics AS "successMetrics", impacted_teams AS "impactedTeams",
-                status, completed, year, start_month AS "startMonth", end_month AS "endMonth",
-                submitted_by AS "submittedBy", submitted_at AS "submittedAt",
-                reviewed_by AS "reviewedBy", reviewed_at AS "reviewedAt",
-                reviewer_notes AS "reviewerNotes", sort_order AS "sortOrder"`,
+       RETURNING ${INITIATIVE_COLUMNS}`,
       [
         String(b.focusArea || "").trim(),
         String(b.team || "").trim(),

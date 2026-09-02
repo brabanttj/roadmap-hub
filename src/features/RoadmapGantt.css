@@ -1,6 +1,6 @@
 .rg-toolbar__grid {
   display: grid;
-  grid-template-columns: 2fr 1fr auto;
+  grid-template-columns: 1.6fr 1fr 1fr 0.8fr auto;
   gap: var(--lt-space-3);
   align-items: center;
 }
@@ -27,10 +27,7 @@
 .rg-swatch--backlog {
   background: var(--lt-red);
 }
-.rg-swatch--planned {
-  background: var(--lt-blue);
-}
-.rg-swatch--in_progress {
+.rg-swatch--in_development {
   background: var(--lt-green);
 }
 .rg-swatch--completed {
@@ -38,98 +35,219 @@
 }
 
 .rg-scroll {
-  overflow-x: auto;
+  overflow: auto;
   border: 1px solid var(--lt-color-border);
   border-radius: var(--lt-radius-lg);
   background: var(--lt-white);
+  box-shadow: var(--lt-shadow-sm);
 }
 
 .rg-grid {
   display: grid;
-  grid-template-columns: 240px repeat(13, minmax(64px, 1fr));
-  min-width: 1080px;
+  grid-template-columns: 220px repeat(13, minmax(60px, 1fr));
   align-items: stretch;
+  min-width: 1080px;
+  position: relative;
 }
 
 .rg-headcell {
   position: sticky;
   top: 0;
-  z-index: 2;
+  z-index: 4;
   padding: var(--lt-space-3) var(--lt-space-2);
   background: var(--lt-deep-blue);
-  color: #fff;
+  color: rgba(255, 255, 255, 0.85);
   font-size: var(--lt-fs-xs);
   font-weight: var(--lt-fw-bold);
   text-align: center;
-  border-bottom: 1px solid var(--lt-color-border);
+  letter-spacing: 0.03em;
+  border-bottom: 2px solid var(--lt-green);
 }
 .rg-headcell--label {
+  position: sticky;
+  left: 0;
+  z-index: 5;
   text-align: left;
   padding-left: var(--lt-space-4);
+  color: #fff;
+}
+.rg-headcell--now {
+  background: var(--lt-green-darken-2);
+  color: #fff;
 }
 
+/* Focus area band -- the top level of grouping, bold and brand-colored so
+   it reads clearly above the (lighter) team bands beneath it. */
 .rg-groupband {
-  padding: var(--lt-space-2) var(--lt-space-4);
-  background: var(--lt-blue-lighten-4);
-  color: var(--lt-blue);
+  background: var(--lt-blue);
+  color: #fff;
+}
+.rg-groupband__pin {
+  position: sticky;
+  left: var(--lt-space-4);
+  display: inline-block;
+  padding: var(--lt-space-3) 0;
   font-family: var(--lt-font-display);
-  font-size: var(--lt-fs-sm);
-  font-weight: var(--lt-fw-bold);
-  border-bottom: 1px solid var(--lt-color-border);
-  border-top: 1px solid var(--lt-color-border);
+  font-size: var(--lt-fs-md);
+  letter-spacing: 0.01em;
 }
 
+/* Team band -- deliberately distinct from both the focus-area band above it
+   and the plain initiative rows below it: darker + uppercase + a count
+   badge, so the eye never confuses "this is a team" with "this is a task". */
 .rg-teamband {
-  padding: var(--lt-space-2) var(--lt-space-4);
-  background: var(--lt-gray);
-  color: var(--lt-text-secondary);
+  background: var(--lt-deep-blue);
+  color: rgba(255, 255, 255, 0.92);
+}
+.rg-teamband__pin {
+  position: sticky;
+  left: var(--lt-space-4);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--lt-space-2);
+  padding: var(--lt-space-2) 0;
   font-size: var(--lt-fs-xs);
-  font-weight: var(--lt-fw-bold);
+  font-weight: var(--lt-fw-black);
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.08em;
+}
+.rg-teamband__count {
+  display: inline-grid;
+  place-items: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 6px;
+  border-radius: var(--lt-radius-pill);
+  background: rgba(255, 255, 255, 0.16);
+  font-size: 10px;
+  letter-spacing: normal;
+  text-transform: none;
+  font-weight: var(--lt-fw-bold);
+}
+
+/* Full-width zebra background painted behind every initiative row so the
+   Backlog/month cells that have no bar in them still carry the row's tint --
+   without this, empty grid cells show the container background instead. */
+.rg-rowbg {
+  background: var(--lt-white);
   border-bottom: 1px solid var(--lt-color-border);
+}
+.rg-rowbg--alt {
+  background: #fafbfc;
 }
 
 .rg-labelcell {
-  display: block;
+  position: sticky;
+  left: 0;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: 6px;
   width: 100%;
   text-align: left;
   padding: var(--lt-space-2) var(--lt-space-4);
   border: none;
-  border-bottom: 1px solid var(--lt-color-border);
+  border-right: 1px solid var(--lt-color-border);
   background: var(--lt-white);
   color: var(--lt-text);
   font-family: var(--lt-font-body);
   font-size: var(--lt-fs-sm);
   font-weight: var(--lt-fw-bold);
   cursor: pointer;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
-.rg-labelcell:hover {
+.rg-labelcell--alt {
+  background: #fafbfc;
+}
+.rg-labelcell:hover,
+.rg-labelcell:focus-visible {
   background: var(--lt-blue-lighten-4);
   color: var(--lt-blue);
 }
+.rg-labelcell__text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .rg-labelcell__done {
-  margin-left: 6px;
+  flex: 0 0 auto;
   color: var(--lt-green-darken-2);
 }
 
+/* Rich hover card -- replaces the browser's native title tooltip with
+   Focus area / Summary / Current state / Future state, per row. Anchored to
+   the (sticky) label cell, which is itself a positioned containing block. */
+.rg-tooltip {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 30;
+  width: 340px;
+  max-width: min(340px, 90vw);
+  background: var(--lt-white);
+  border: 1px solid var(--lt-color-border);
+  border-radius: var(--lt-radius-md);
+  box-shadow: var(--lt-shadow-lg);
+  padding: var(--lt-space-4);
+  text-align: left;
+  visibility: hidden;
+  opacity: 0;
+  transform: translateY(-4px);
+  transition: opacity var(--lt-transition), transform var(--lt-transition), visibility var(--lt-transition);
+  pointer-events: none;
+}
+.rg-labelcell:hover .rg-tooltip,
+.rg-labelcell:focus-visible .rg-tooltip {
+  visibility: visible;
+  opacity: 1;
+  transform: translateY(0);
+}
+.rg-tooltip__title {
+  font-family: var(--lt-font-display);
+  font-size: var(--lt-fs-md);
+  color: var(--lt-deep-blue);
+  margin-bottom: var(--lt-space-3);
+}
+.rg-tooltip__facts {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lt-space-3);
+  margin: 0;
+}
+.rg-tooltip__fact dt {
+  font-size: var(--lt-fs-xs);
+  font-weight: var(--lt-fw-black);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--lt-text-muted);
+  margin-bottom: 2px;
+}
+.rg-tooltip__fact dd {
+  margin: 0;
+  font-size: var(--lt-fs-sm);
+  font-weight: var(--lt-fw-regular);
+  color: var(--lt-text-secondary);
+  line-height: 1.5;
+  white-space: normal;
+}
+
 .rg-bar {
-  margin: 6px 3px;
+  align-self: center;
+  margin: 0 3px;
   border-radius: var(--lt-radius-sm);
-  border-bottom: 1px solid var(--lt-color-border);
   cursor: pointer;
   display: flex;
   align-items: center;
-  min-height: 28px;
+  min-height: 30px;
   overflow: hidden;
-  transition: filter var(--lt-transition), transform var(--lt-transition);
+  box-shadow: 0 1px 3px rgba(16, 31, 48, 0.15);
+  transition: filter var(--lt-transition), transform var(--lt-transition), box-shadow var(--lt-transition);
 }
 .rg-bar:hover {
   filter: brightness(1.08);
-  transform: translateY(-1px);
+  transform: translateY(-1px) scale(1.01);
+  box-shadow: var(--lt-shadow-md);
 }
 .rg-bar__label {
   padding: 0 10px;
@@ -143,13 +261,10 @@
 .rg-bar--backlog {
   background: var(--lt-red);
 }
-.rg-bar--planned {
-  background: var(--lt-blue);
-}
-.rg-bar--in_progress {
+.rg-bar--in_development {
   background: var(--lt-green);
 }
-.rg-bar--in_progress .rg-bar__label {
+.rg-bar--in_development .rg-bar__label {
   color: var(--lt-deep-blue);
 }
 .rg-bar--completed {

@@ -4,7 +4,7 @@ import { MONTH_NAMES, STATUS_LABEL } from "../lib/text.js";
 import "./InitiativeModal.css";
 
 const FRIENDLY_ERROR = "Something went wrong. Please try again.";
-const STATUS_OPTIONS = ["backlog", "planned", "in_progress", "completed"];
+const STATUS_OPTIONS = ["backlog", "in_development", "completed"];
 
 function toFormState(initiative) {
   return {

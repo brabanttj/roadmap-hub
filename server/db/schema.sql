@@ -41,7 +41,7 @@ CREATE TABLE IF NOT EXISTS initiatives (
   success_metrics  TEXT NOT NULL DEFAULT '',
   impacted_teams   TEXT[] NOT NULL DEFAULT '{}',
   status           TEXT NOT NULL DEFAULT 'idea'
-                     CHECK (status IN ('idea', 'backlog', 'planned', 'in_progress', 'completed', 'rejected')),
+                     CHECK (status IN ('idea', 'backlog', 'in_development', 'completed', 'rejected')),
   completed        BOOLEAN NOT NULL DEFAULT FALSE,
   year             INT,
   start_month      INT CHECK (start_month BETWEEN 1 AND 12),
