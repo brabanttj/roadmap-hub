@@ -1,0 +1,33 @@
+.if-card {
+  max-width: 640px;
+  margin: 0 auto;
+}
+.if-card__title {
+  margin-bottom: var(--lt-space-2);
+}
+.if-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lt-space-4);
+}
+.if-form__row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--lt-space-4);
+}
+.if-form__textarea {
+  resize: vertical;
+}
+.if-form__actions {
+  display: flex;
+  justify-content: flex-end;
+}
+.if-done__actions {
+  margin-top: var(--lt-space-5);
+}
+
+@media (max-width: 560px) {
+  .if-form__row {
+    grid-template-columns: 1fr;
+  }
+}

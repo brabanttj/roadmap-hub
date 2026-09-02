@@ -1,0 +1,124 @@
+.rp-shell {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: var(--lt-space-8) var(--lt-space-6) var(--lt-space-10);
+}
+
+.rp-header {
+  text-align: center;
+  padding: var(--lt-space-4) 0 var(--lt-space-6);
+}
+.rp-header__title {
+  font-size: clamp(2rem, 4vw, 3rem);
+  margin: var(--lt-space-3) auto var(--lt-space-3);
+}
+.rp-header__sub {
+  max-width: 60ch;
+  margin: 0 auto;
+  color: var(--lt-text-secondary);
+  font-size: var(--lt-fs-md);
+}
+
+/* Tabs — shared with the empty-state / banner classes below across every
+   feature tab (Roadmap, Submit, Review, Taxonomy). */
+.cf-tabs {
+  display: flex;
+  gap: var(--lt-space-2);
+  margin-bottom: var(--lt-space-6);
+  flex-wrap: wrap;
+}
+.cf-tab {
+  padding: 10px 20px;
+  border-radius: var(--lt-radius-pill);
+  border: 1px solid var(--lt-color-border);
+  background: var(--lt-white);
+  color: var(--lt-text-muted);
+  font-family: var(--lt-font-body);
+  font-size: var(--lt-fs-sm);
+  font-weight: var(--lt-fw-bold);
+  cursor: pointer;
+  transition: background var(--lt-transition), color var(--lt-transition),
+    border-color var(--lt-transition);
+}
+.cf-tab:hover {
+  border-color: var(--lt-blue-lighten-2);
+  color: var(--lt-blue);
+}
+.cf-tab--on {
+  background: var(--lt-deep-blue);
+  color: #fff;
+  border-color: var(--lt-deep-blue);
+}
+.cf-tab__n {
+  display: inline-grid;
+  place-items: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  margin-left: 6px;
+  border-radius: var(--lt-radius-pill);
+  background: var(--lt-blue-lighten-4);
+  color: var(--lt-blue);
+  font-size: var(--lt-fs-xs);
+}
+.cf-tab--on .cf-tab__n {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+}
+
+.cf-toolbar {
+  margin-bottom: var(--lt-space-6);
+}
+.rb-intro {
+  margin: var(--lt-space-4) 0 var(--lt-space-5);
+  color: var(--lt-text-secondary);
+  font-size: var(--lt-fs-sm);
+}
+.cf-empty-results {
+  text-align: center;
+  padding: var(--lt-space-10) var(--lt-space-6);
+}
+.cf-empty__title {
+  font-family: var(--lt-font-display);
+  font-size: var(--lt-fs-lg);
+  color: var(--lt-deep-blue);
+}
+.cf-empty__sub {
+  max-width: 40ch;
+  margin: var(--lt-space-2) auto 0;
+  font-size: var(--lt-fs-sm);
+  color: var(--lt-text-muted);
+}
+
+.mt-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--lt-space-3);
+  margin-bottom: var(--lt-space-4);
+  padding: var(--lt-space-3) var(--lt-space-4);
+  border: 1px solid #ffd9a0;
+  border-radius: var(--lt-radius-md);
+  background: var(--lt-color-warning-bg);
+  color: var(--lt-color-warning);
+  font-size: var(--lt-fs-sm);
+  line-height: 1.5;
+}
+.mt-banner__icon {
+  flex: 0 0 auto;
+  font-size: var(--lt-fs-md);
+  line-height: 1.2;
+}
+
+.mt-confirm__body {
+  color: var(--lt-text-secondary);
+  font-size: var(--lt-fs-sm);
+  line-height: 1.6;
+}
+.mt-confirm__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--lt-space-3);
+  margin-top: var(--lt-space-5);
+  padding-top: var(--lt-space-4);
+  border-top: 1px solid var(--lt-color-border);
+}

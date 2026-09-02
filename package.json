@@ -1,0 +1,29 @@
+{
+  "name": "roadmap-hub",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Roadmap Hub — idea intake, review, and roadmap management.",
+  "scripts": {
+    "dev": "vite",
+    "dev:api": "node server/index.mjs",
+    "build": "vite build",
+    "preview": "vite preview",
+    "start": "node server/index.mjs",
+    "db:migrate": "node server/db/migrate.mjs",
+    "db:seed": "node scripts/seed-db.mjs"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "pg": "^8.13.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.4",
+    "vite": "^5.4.11"
+  },
+  "allowScripts": {
+    "esbuild@0.21.5": true
+  }
+}

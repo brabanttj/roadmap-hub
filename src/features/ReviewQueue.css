@@ -1,0 +1,42 @@
+.rq-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: var(--lt-space-4);
+}
+.rq-card__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--lt-space-3);
+  margin-bottom: var(--lt-space-2);
+}
+.rq-card__title {
+  font-family: var(--lt-font-display);
+  font-size: var(--lt-fs-md);
+  color: var(--lt-deep-blue);
+  margin: 0;
+}
+.rq-card__badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  flex: 0 0 auto;
+}
+.rq-card__desc {
+  font-size: var(--lt-fs-sm);
+  color: var(--lt-text-secondary);
+  line-height: 1.5;
+  margin-bottom: var(--lt-space-3);
+}
+.rq-card__meta {
+  display: flex;
+  gap: var(--lt-space-3);
+  font-size: var(--lt-fs-xs);
+  color: var(--lt-text-muted);
+  margin-bottom: var(--lt-space-4);
+}
+.rq-card__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--lt-space-2);
+}

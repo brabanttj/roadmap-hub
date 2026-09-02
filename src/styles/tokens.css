@@ -1,0 +1,99 @@
+/* ==========================================================================
+   Design Tokens
+   --------------------------------------------------------------------------
+   Shared with ai-capability-finder: the LendingTree brand palette plus the
+   Lato (body) + DM Serif Display (display) typefaces, spacing, radius, and
+   elevation scales.
+   ========================================================================== */
+
+:root {
+  /* ---- Brand palette ------------------------------------------------------ */
+  --lt-blue: #0069ba;
+  --lt-blue-darken-2: #002a4a;
+  --lt-blue-lighten-2: #97cef7;
+  --lt-blue-lighten-4: #f1f8ff;
+
+  --lt-green: #08c177;
+  --lt-green-vivid: #00d084;
+  --lt-green-darken-2: #046a41;
+  --lt-green-lighten-2: #9de8c9;
+  --lt-green-lighten-3: #effef8;
+
+  --lt-deep-blue: #101f30;
+  --lt-teal: #078181;
+  --lt-teal-darken: #044d4d;
+  --lt-chartreuse: #deff85;
+
+  --lt-red: #ae2b41;
+  --lt-red-darken: #822031;
+  --lt-red-lighten-4: #fbebee;
+
+  /* ---- Neutrals ------------------------------------------------------------ */
+  --lt-white: #ffffff;
+  --lt-gray: #f6f7f7;
+  --lt-gray-light-2: #e3e6e8;
+  --lt-gray-300: #c6cdd0;
+  --lt-gray-500: #848e92;
+  --lt-text: #101f30;
+  --lt-text-secondary: #4b5155;
+  --lt-text-muted: #687073;
+
+  /* ---- Semantic roles ----------------------------------------------------- */
+  --lt-color-primary: var(--lt-blue);
+  --lt-color-primary-hover: var(--lt-blue-darken-2);
+  --lt-color-accent: var(--lt-green);
+  --lt-color-bg: var(--lt-gray);
+  --lt-color-surface: var(--lt-white);
+  --lt-color-border: var(--lt-gray-light-2);
+  --lt-color-success: var(--lt-green);
+  --lt-color-success-bg: var(--lt-green-lighten-3);
+  --lt-color-warning: #b25f00;
+  --lt-color-warning-bg: #fff4e0;
+  --lt-color-danger: var(--lt-red);
+  --lt-color-danger-hover: var(--lt-red-darken);
+  --lt-color-danger-bg: var(--lt-red-lighten-4);
+  --lt-color-neutral: var(--lt-text-muted);
+  --lt-color-neutral-bg: var(--lt-gray);
+  --lt-color-focus-ring: var(--lt-blue);
+
+  /* ---- Typography --------------------------------------------------------- */
+  --lt-font-body: "Lato", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    sans-serif;
+  --lt-font-display: "DM Serif Display", Georgia, "Times New Roman", serif;
+
+  --lt-fw-regular: 400;
+  --lt-fw-bold: 700;
+  --lt-fw-black: 900;
+
+  --lt-fs-xs: 0.75rem;
+  --lt-fs-sm: 0.875rem;
+  --lt-fs-base: 1rem;
+  --lt-fs-md: 1.25rem;
+  --lt-fs-lg: 1.5rem;
+  --lt-fs-xl: 2.25rem;
+  --lt-fs-2xl: 2.625rem;
+
+  /* ---- Radius (4 / 8 / 12 / pill) ----------------------------------------- */
+  --lt-radius-sm: 4px;
+  --lt-radius-md: 8px;
+  --lt-radius-lg: 12px;
+  --lt-radius-pill: 64px;
+
+  /* ---- Spacing scale ------------------------------------------------------ */
+  --lt-space-1: 4px;
+  --lt-space-2: 8px;
+  --lt-space-3: 12px;
+  --lt-space-4: 16px;
+  --lt-space-5: 20px;
+  --lt-space-6: 24px;
+  --lt-space-8: 32px;
+  --lt-space-10: 40px;
+
+  /* ---- Elevation ---------------------------------------------------------- */
+  --lt-shadow-sm: 0 1px 2px rgba(16, 31, 48, 0.06);
+  --lt-shadow-md: 0 4px 16px rgba(16, 31, 48, 0.08);
+  --lt-shadow-lg: 0 12px 32px rgba(16, 31, 48, 0.12);
+
+  /* ---- Motion ------------------------------------------------------------- */
+  --lt-transition: 150ms ease;
+}
