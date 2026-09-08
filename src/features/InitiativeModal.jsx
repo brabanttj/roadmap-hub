@@ -21,20 +21,7 @@ function weeksByMonth(year) {
   }));
 }
 
-// This Monday, as an ISO date -- the sensible default start/end week for a
-// brand-new initiative, since every field is required here and "leave it
-// blank" isn't an option (see the Start/End week <Select>s below, which
-// have no blank/"Unscheduled" option to match).
-function currentWeekMonday() {
-  const d = new Date();
-  d.setHours(0, 0, 0, 0);
-  const day = d.getDay();
-  d.setDate(d.getDate() + (day === 0 ? -6 : 1 - day));
-  return d.toISOString().slice(0, 10);
-}
-
 function toFormState(initiative, focusAreas, teams) {
-  const thisWeek = currentWeekMonday();
   return {
     title: initiative?.title || "",
     focusArea: initiative?.focusArea || focusAreas[0]?.name || "",
@@ -49,8 +36,10 @@ function toFormState(initiative, focusAreas, teams) {
       : "backlog",
     startYear: initiative?.startDate ? Number(initiative.startDate.slice(0, 4)) : REFERENCE_YEAR,
     endYear: initiative?.endDate ? Number(initiative.endDate.slice(0, 4)) : REFERENCE_YEAR,
-    startDate: initiative?.startDate || thisWeek,
-    endDate: initiative?.endDate || thisWeek,
+    // Backlog means "not yet scheduled" -- unscheduled (blank) is only
+    // valid while status stays Backlog; anything else needs a real range.
+    startDate: initiative?.startDate || "",
+    endDate: initiative?.endDate || "",
   };
 }
 
@@ -62,6 +51,9 @@ export default function InitiativeModal({ initiative, focusAreas, teams, onClose
   const [error, setError] = useState("");
 
   const upd = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
+  // Backlog is explicitly "not yet scheduled" -- everything else needs a
+  // real start/end week.
+  const scheduleRequired = form.status !== "backlog";
   const valid =
     form.title.trim() &&
     form.focusArea &&
@@ -71,8 +63,7 @@ export default function InitiativeModal({ initiative, focusAreas, teams, onClose
     form.futureState.trim() &&
     form.successMetrics.trim() &&
     form.impactedTeams.trim() &&
-    form.startDate &&
-    form.endDate;
+    (!scheduleRequired || (form.startDate && form.endDate));
   const startWeeks = weeksByMonth(form.startYear);
   const endWeeks = weeksByMonth(form.endYear);
   const yearOptionsFor = (year) => (YEAR_OPTIONS.includes(year) ? YEAR_OPTIONS : [...YEAR_OPTIONS, year].sort());
@@ -216,7 +207,13 @@ export default function InitiativeModal({ initiative, focusAreas, teams, onClose
                 </option>
               ))}
             </Select>
-            <Select label="Start week *" value={form.startDate} onChange={upd("startDate")} required>
+            <Select
+              label={`Start week${scheduleRequired ? " *" : ""}`}
+              value={form.startDate}
+              onChange={upd("startDate")}
+              required={scheduleRequired}
+            >
+              <option value="">Unscheduled</option>
               {startWeeks.map((m) => (
                 <optgroup key={m.name} label={m.name}>
                   {m.weeks.map((w) => (
@@ -236,7 +233,13 @@ export default function InitiativeModal({ initiative, focusAreas, teams, onClose
                 </option>
               ))}
             </Select>
-            <Select label="End week *" value={form.endDate} onChange={upd("endDate")} required>
+            <Select
+              label={`End week${scheduleRequired ? " *" : ""}`}
+              value={form.endDate}
+              onChange={upd("endDate")}
+              required={scheduleRequired}
+            >
+              <option value="">Unscheduled</option>
               {endWeeks.map((m) => (
                 <optgroup key={m.name} label={m.name}>
                   {m.weeks.map((w) => (
