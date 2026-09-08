@@ -23,6 +23,33 @@ const gridColOf = (i) => i + FIXED_COLS + 1;
 
 // Which columns (by index into `activeColumns`) a scheduled/unscheduled
 // initiative occupies, independent of which columns are currently shown.
+// Every field on an initiative, for the hover card -- so a reviewer never
+// has to open the edit modal just to read something.
+function initiativeFacts(item) {
+  const schedule =
+    item.startMonth != null && item.endMonth != null
+      ? `${MONTH_NAMES[item.startMonth - 1]}–${MONTH_NAMES[item.endMonth - 1]}${item.year ? " " + item.year : ""}`
+      : "Unscheduled (Backlog)";
+  const fmtDate = (v) => (v ? new Date(v).toLocaleDateString() : "—");
+  return [
+    { label: "Team", value: item.team || "—" },
+    { label: "Focus area", value: item.focusArea || "—" },
+    { label: "Status", value: STATUS_LABEL[item.status] },
+    { label: "Completed", value: item.completed ? "Yes" : "No" },
+    { label: "Schedule", value: schedule },
+    { label: "Summary", value: item.summary || "—" },
+    { label: "Current state", value: item.currentState || "—" },
+    { label: "Future state", value: item.futureState || "—" },
+    { label: "Success metrics", value: item.successMetrics || "—" },
+    { label: "Impacted teams", value: item.impactedTeams?.length ? item.impactedTeams.join(", ") : "—" },
+    { label: "Submitted by", value: item.submittedBy || "—" },
+    { label: "Submitted", value: fmtDate(item.submittedAt) },
+    { label: "Reviewed by", value: item.reviewedBy || "—" },
+    { label: "Reviewed", value: fmtDate(item.reviewedAt) },
+    { label: "Reviewer notes", value: item.reviewerNotes || "—" },
+  ];
+}
+
 function occupiedIndices(item, activeColumns) {
   if (item.startMonth == null || item.endMonth == null) {
     const idx = activeColumns.findIndex((c) => c.type === "backlog");
@@ -284,22 +311,12 @@ function GridRow({ row, gridRow, activeColumns, guard, setEditing }) {
         <div className="rg-tooltip" role="tooltip">
           <div className="rg-tooltip__title">{item.title}</div>
           <dl className="rg-tooltip__facts">
-            <div className="rg-tooltip__fact">
-              <dt>Focus area</dt>
-              <dd>{item.focusArea || "—"}</dd>
-            </div>
-            <div className="rg-tooltip__fact">
-              <dt>Summary</dt>
-              <dd>{item.summary || "—"}</dd>
-            </div>
-            <div className="rg-tooltip__fact">
-              <dt>Current state</dt>
-              <dd>{item.currentState || "—"}</dd>
-            </div>
-            <div className="rg-tooltip__fact">
-              <dt>Future state</dt>
-              <dd>{item.futureState || "—"}</dd>
-            </div>
+            {initiativeFacts(item).map((f) => (
+              <div className="rg-tooltip__fact" key={f.label}>
+                <dt>{f.label}</dt>
+                <dd>{f.value}</dd>
+              </div>
+            ))}
           </dl>
         </div>
       </button>

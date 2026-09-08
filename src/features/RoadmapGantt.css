@@ -6,6 +6,13 @@
 }
 
 .rg-scroll {
+  /* A bounded height is what makes this the actual scrolling container --
+     without it, this box only ever grows to fit its content and never
+     overflows, so it's the page that scrolls instead. `position: sticky`
+     anchors to the nearest scrolling ancestor, so with no real scrolling
+     happening here, the sticky header/label column would just scroll away
+     with the page on any vertical scroll. */
+  max-height: 75vh;
   overflow: auto;
   border: 1px solid var(--lt-color-border);
   border-radius: var(--lt-radius-lg);
@@ -194,8 +201,10 @@
   top: calc(100% + 6px);
   left: 0;
   z-index: 30;
-  width: 340px;
-  max-width: min(340px, 90vw);
+  width: 360px;
+  max-width: min(360px, 90vw);
+  max-height: 70vh;
+  overflow-y: auto;
   background: var(--lt-white);
   border: 1px solid var(--lt-color-border);
   border-radius: var(--lt-radius-lg);
@@ -207,6 +216,10 @@
   transform: translateY(-4px);
   transition: opacity var(--lt-transition), transform var(--lt-transition), visibility var(--lt-transition);
   pointer-events: none;
+}
+.rg-labelcell:hover .rg-tooltip,
+.rg-labelcell:focus-visible .rg-tooltip {
+  pointer-events: auto; /* long fact list scrolls -- let the mouse reach it */
 }
 .rg-labelcell:hover .rg-tooltip,
 .rg-labelcell:focus-visible .rg-tooltip {
