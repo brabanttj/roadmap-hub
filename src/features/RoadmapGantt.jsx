@@ -10,6 +10,9 @@ const ALL = "All";
 // rejected ideas never became roadmap work (see the Rejected tab for those).
 const VISIBLE_STATUSES = new Set(["backlog", "in_development", "completed"]);
 const CURRENT_MONTH = new Date().getMonth() + 1;
+// Grid columns: 1 = label, 2 = Backlog, 3..14 = Jan..Dec.
+const DATE_COLUMNS = [2, ...MONTH_NAMES.map((_, idx) => 3 + idx)];
+const BAR_ICON = { completed: "✓", in_development: "●", backlog: "○" };
 
 export default function RoadmapGantt({ initiatives, focusAreas, teams, onUpsert, onRemove }) {
   const guard = usePasswordGate();
@@ -65,18 +68,18 @@ export default function RoadmapGantt({ initiatives, focusAreas, teams, onUpsert,
   }, [visible, focusAreaOrder, teamOrder]);
 
   // Flatten into explicit grid rows up front (row 1 is the header) so every
-  // piece of a row -- background, label, bar -- can share one explicit
-  // `gridRow`, instead of relying on CSS Grid's auto-placement to keep three
-  // separately-emitted elements in lockstep.
+  // piece of a row -- label, bar -- can share one explicit `gridRow`,
+  // instead of relying on CSS Grid's auto-placement to keep separately
+  // emitted elements in lockstep.
   const rows = useMemo(() => {
     const out = [];
     for (const g of groups) {
       out.push({ type: "focusArea", key: `fa-${g.focusArea}`, label: g.focusArea });
       for (const t of g.teams) {
         out.push({ type: "team", key: `team-${g.focusArea}-${t.team}`, label: t.team, count: t.items.length });
-        t.items.forEach((item, idx) => {
-          out.push({ type: "item", key: `item-${item.id}`, item, alt: idx % 2 === 1 });
-        });
+        for (const item of t.items) {
+          out.push({ type: "item", key: `item-${item.id}`, item });
+        }
       }
     }
     return out;
@@ -101,6 +104,8 @@ export default function RoadmapGantt({ initiatives, focusAreas, teams, onUpsert,
     if (!res.ok || !j.ok) throw new Error(j.error || "Something went wrong. Please try again.");
     onRemove(id);
   };
+
+  const bodyRowCount = rows.length;
 
   return (
     <>
@@ -168,20 +173,34 @@ export default function RoadmapGantt({ initiatives, focusAreas, teams, onUpsert,
         </Card>
       ) : (
         <div className="rg-scroll lt-scroll">
-          <div className="rg-grid" style={{ gridTemplateRows: `auto repeat(${rows.length}, auto)` }}>
-            <div className="rg-headcell rg-headcell--label" style={{ gridRow: 1 }}>
+          <div className="rg-grid" style={{ gridTemplateRows: `auto repeat(${bodyRowCount}, 44px)` }}>
+            {/* Column tints painted first so every later element (header,
+                labels, bars) naturally stacks on top in DOM order -- no
+                z-index bookkeeping needed. */}
+            {DATE_COLUMNS.map((col, i) => (
+              <div
+                key={`colbg-${col}`}
+                className={`rg-colbg${i % 2 === 1 ? " rg-colbg--alt" : ""}${
+                  col === 2 + CURRENT_MONTH ? " rg-colbg--today" : ""
+                }`}
+                style={{ gridColumn: col, gridRow: `1 / ${bodyRowCount + 2}` }}
+              />
+            ))}
+
+            <div className="rg-headcell rg-headcell--label" style={{ gridRow: 1, gridColumn: 1 }}>
               Initiative
             </div>
-            <div className="rg-headcell" style={{ gridRow: 1 }}>
+            <div className="rg-headcell" style={{ gridRow: 1, gridColumn: 2 }}>
               Backlog
             </div>
             {MONTH_NAMES.map((m, idx) => (
               <div
                 key={m}
                 className={`rg-headcell${idx + 1 === CURRENT_MONTH ? " rg-headcell--now" : ""}`}
-                style={{ gridRow: 1 }}
+                style={{ gridRow: 1, gridColumn: 3 + idx }}
               >
                 {m}
+                {idx + 1 === CURRENT_MONTH && <span className="rg-headcell__today">Today</span>}
               </div>
             ))}
 
@@ -233,20 +252,13 @@ function GridRow({ row, gridRow, guard, setEditing }) {
 
   return (
     <Fragment>
-      <div
-        className={`rg-rowbg${row.alt ? " rg-rowbg--alt" : ""}`}
-        style={{ gridRow, gridColumn: "1 / -1" }}
-      />
       <button
         type="button"
-        className={`rg-labelcell${row.alt ? " rg-labelcell--alt" : ""}`}
+        className="rg-labelcell"
         style={{ gridRow, gridColumn: 1 }}
         onClick={onEdit}
       >
         <span className="rg-labelcell__text">{item.title}</span>
-        {item.completed && (
-          <span className="rg-labelcell__done" aria-label="Completed">✓</span>
-        )}
         <div className="rg-tooltip" role="tooltip">
           <div className="rg-tooltip__title">{item.title}</div>
           <dl className="rg-tooltip__facts">
@@ -278,6 +290,7 @@ function GridRow({ row, gridRow, guard, setEditing }) {
         onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && onEdit()}
         title={`${item.title} — ${STATUS_LABEL[item.status]}`}
       >
+        <span className="rg-bar__icon" aria-hidden="true">{BAR_ICON[item.status]}</span>
         <span className="rg-bar__label">{item.title}</span>
       </div>
     </Fragment>

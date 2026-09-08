@@ -19,9 +19,9 @@
   color: var(--lt-text-muted);
 }
 .rg-swatch {
-  width: 12px;
-  height: 12px;
-  border-radius: 3px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
   display: inline-block;
 }
 .rg-swatch--backlog {
@@ -44,72 +44,110 @@
 
 .rg-grid {
   display: grid;
-  grid-template-columns: 220px repeat(13, minmax(60px, 1fr));
+  grid-template-columns: 230px repeat(13, minmax(64px, 1fr));
   align-items: stretch;
   min-width: 1080px;
   position: relative;
 }
 
+/* ---- Header: light, calm -- no heavy dark bands anywhere in this redesign,
+   hierarchy comes from typography and the accent line under "today". ---- */
 .rg-headcell {
   position: sticky;
   top: 0;
-  z-index: 4;
+  z-index: 6;
   padding: var(--lt-space-3) var(--lt-space-2);
-  background: var(--lt-deep-blue);
-  color: rgba(255, 255, 255, 0.85);
+  background: var(--lt-white);
+  color: var(--lt-text-muted);
   font-size: var(--lt-fs-xs);
   font-weight: var(--lt-fw-bold);
   text-align: center;
   letter-spacing: 0.03em;
-  border-bottom: 2px solid var(--lt-green);
+  border-bottom: 1px solid var(--lt-color-border);
 }
 .rg-headcell--label {
   position: sticky;
   left: 0;
-  z-index: 5;
+  z-index: 7;
   text-align: left;
   padding-left: var(--lt-space-4);
-  color: #fff;
+  color: var(--lt-deep-blue);
+  text-transform: uppercase;
 }
 .rg-headcell--now {
-  background: var(--lt-green-darken-2);
+  position: relative;
+  color: var(--lt-green-darken-2);
+  border-bottom: 2px solid var(--lt-green);
+}
+.rg-headcell__today {
+  display: block;
+  font-size: 10px;
+  font-weight: var(--lt-fw-black);
   color: #fff;
+  background: var(--lt-green-darken-2);
+  border-radius: var(--lt-radius-pill);
+  padding: 1px 8px;
+  margin: 3px auto 0;
+  width: fit-content;
+  letter-spacing: 0.04em;
 }
 
-/* Focus area band -- the top level of grouping, bold and brand-colored so
-   it reads clearly above the (lighter) team bands beneath it. */
+/* Column tints -- vertical striping instead of horizontal row zebra, so
+   scanning "what's happening in October" reads as a column, the way a
+   calendar does. */
+.rg-colbg {
+  background: transparent;
+}
+.rg-colbg--alt {
+  background: #f6f8fa;
+}
+.rg-colbg--today {
+  background: var(--lt-green-lighten-3);
+  box-shadow: inset 2px 0 0 var(--lt-green), inset -2px 0 0 var(--lt-green);
+}
+
+/* ---- Grouping: typographic hierarchy instead of heavy color blocks --
+   Focus area = bold serif + colored left rule; Team = smaller, muted,
+   uppercase. Both stay light so they never compete visually with the
+   bars, which is where the eye should land. ---- */
 .rg-groupband {
-  background: var(--lt-blue);
-  color: #fff;
+  background: var(--lt-white);
+  border-top: 1px solid var(--lt-color-border);
+  border-bottom: 1px solid var(--lt-color-border);
 }
 .rg-groupband__pin {
   position: sticky;
-  left: var(--lt-space-4);
-  display: inline-block;
-  padding: var(--lt-space-3) 0;
+  left: 0;
+  display: flex;
+  align-items: center;
+  height: 100%;
+  padding: 0 var(--lt-space-4);
+  border-left: 4px solid var(--lt-blue);
   font-family: var(--lt-font-display);
-  font-size: var(--lt-fs-md);
-  letter-spacing: 0.01em;
+  font-size: var(--lt-fs-base);
+  color: var(--lt-deep-blue);
+  background: var(--lt-blue-lighten-4);
+  width: 100%;
+  box-sizing: border-box;
 }
 
-/* Team band -- deliberately distinct from both the focus-area band above it
-   and the plain initiative rows below it: darker + uppercase + a count
-   badge, so the eye never confuses "this is a team" with "this is a task". */
 .rg-teamband {
-  background: var(--lt-deep-blue);
-  color: rgba(255, 255, 255, 0.92);
+  background: var(--lt-white);
+  border-bottom: 1px solid var(--lt-color-border);
 }
 .rg-teamband__pin {
   position: sticky;
-  left: var(--lt-space-4);
+  left: 0;
   display: inline-flex;
   align-items: center;
   gap: var(--lt-space-2);
-  padding: var(--lt-space-2) 0;
+  height: 100%;
+  padding: 0 var(--lt-space-4) 0 calc(var(--lt-space-4) + 4px);
   font-size: var(--lt-fs-xs);
   font-weight: var(--lt-fw-black);
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.07em;
+  color: var(--lt-text-muted);
 }
 .rg-teamband__count {
   display: inline-grid;
@@ -118,36 +156,28 @@
   height: 18px;
   padding: 0 6px;
   border-radius: var(--lt-radius-pill);
-  background: rgba(255, 255, 255, 0.16);
+  background: var(--lt-gray);
+  border: 1px solid var(--lt-color-border);
   font-size: 10px;
   letter-spacing: normal;
   text-transform: none;
   font-weight: var(--lt-fw-bold);
+  color: var(--lt-text-secondary);
 }
 
-/* Full-width zebra background painted behind every initiative row so the
-   Backlog/month cells that have no bar in them still carry the row's tint --
-   without this, empty grid cells show the container background instead. */
-.rg-rowbg {
-  background: var(--lt-white);
-  border-bottom: 1px solid var(--lt-color-border);
-}
-.rg-rowbg--alt {
-  background: #fafbfc;
-}
-
+/* ---- Initiative rows ---------------------------------------------------- */
 .rg-labelcell {
   position: sticky;
   left: 0;
   z-index: 3;
   display: flex;
   align-items: center;
-  gap: 6px;
+  height: 100%;
   width: 100%;
   text-align: left;
-  padding: var(--lt-space-2) var(--lt-space-4);
+  padding: 0 var(--lt-space-4) 0 calc(var(--lt-space-4) + 4px);
   border: none;
-  border-right: 1px solid var(--lt-color-border);
+  border-bottom: 1px solid var(--lt-color-border);
   background: var(--lt-white);
   color: var(--lt-text);
   font-family: var(--lt-font-body);
@@ -155,13 +185,14 @@
   font-weight: var(--lt-fw-bold);
   cursor: pointer;
 }
-.rg-labelcell--alt {
-  background: #fafbfc;
-}
 .rg-labelcell:hover,
 .rg-labelcell:focus-visible {
   background: var(--lt-blue-lighten-4);
   color: var(--lt-blue);
+  /* Without this, the tooltip's own z-index only orders it within this
+     button's stacking context -- later rows (same z-index: 3) would still
+     paint over it, since a child can never outrank its parent's level. */
+  z-index: 50;
 }
 .rg-labelcell__text {
   flex: 1;
@@ -169,10 +200,6 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-.rg-labelcell__done {
-  flex: 0 0 auto;
-  color: var(--lt-green-darken-2);
 }
 
 /* Rich hover card -- replaces the browser's native title tooltip with
@@ -187,7 +214,7 @@
   max-width: min(340px, 90vw);
   background: var(--lt-white);
   border: 1px solid var(--lt-color-border);
-  border-radius: var(--lt-radius-md);
+  border-radius: var(--lt-radius-lg);
   box-shadow: var(--lt-shadow-lg);
   padding: var(--lt-space-4);
   text-align: left;
@@ -232,25 +259,41 @@
   white-space: normal;
 }
 
+/* ---- Bars: rounded pills floating in whitespace, not blocks that fill the
+   cell -- the main visual fix from the redesign brief. ---- */
 .rg-bar {
   align-self: center;
-  margin: 0 3px;
-  border-radius: var(--lt-radius-sm);
+  height: 28px;
+  margin: 0 4px;
+  border-radius: var(--lt-radius-pill);
   cursor: pointer;
   display: flex;
   align-items: center;
-  min-height: 30px;
+  gap: 6px;
   overflow: hidden;
-  box-shadow: 0 1px 3px rgba(16, 31, 48, 0.15);
+  box-shadow: 0 1px 2px rgba(16, 31, 48, 0.18);
   transition: filter var(--lt-transition), transform var(--lt-transition), box-shadow var(--lt-transition);
 }
 .rg-bar:hover {
   filter: brightness(1.08);
-  transform: translateY(-1px) scale(1.01);
+  transform: translateY(-1px) scale(1.02);
   box-shadow: var(--lt-shadow-md);
 }
+.rg-bar__icon {
+  flex: 0 0 auto;
+  display: inline-grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  margin-left: 5px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  font-size: 10px;
+  line-height: 1;
+  color: #fff;
+}
 .rg-bar__label {
-  padding: 0 10px;
+  padding-right: 10px;
   font-size: var(--lt-fs-xs);
   font-weight: var(--lt-fw-bold);
   color: #fff;
@@ -264,7 +307,8 @@
 .rg-bar--in_development {
   background: var(--lt-green);
 }
-.rg-bar--in_development .rg-bar__label {
+.rg-bar--in_development .rg-bar__label,
+.rg-bar--in_development .rg-bar__icon {
   color: var(--lt-deep-blue);
 }
 .rg-bar--completed {
