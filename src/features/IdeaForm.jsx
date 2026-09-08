@@ -8,16 +8,14 @@ const FRIENDLY_ERROR = "Something went wrong. Please try again.";
 const EMPTY_FORM = {
   title: "",
   focusArea: "",
-  team: "",
   summary: "",
   currentState: "",
   futureState: "",
   successMetrics: "",
-  impactedTeams: "",
   submittedBy: "",
 };
 
-export default function IdeaForm({ focusAreas, teams, onSubmitted }) {
+export default function IdeaForm({ focusAreas, onSubmitted }) {
   const [form, setForm] = useState(EMPTY_FORM);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -36,13 +34,7 @@ export default function IdeaForm({ focusAreas, teams, onSubmitted }) {
       const res = await fetch("/api/ideas", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...form,
-          impactedTeams: form.impactedTeams
-            .split(",")
-            .map((t) => t.trim())
-            .filter(Boolean),
-        }),
+        body: JSON.stringify(form),
       });
       const j = await res.json();
       if (!res.ok || !j.ok) throw new Error(j.error || FRIENDLY_ERROR);
@@ -100,24 +92,14 @@ export default function IdeaForm({ focusAreas, teams, onSubmitted }) {
           required
           autoFocus
         />
-        <div className="if-form__row">
-          <Select label="Focus area" value={form.focusArea} onChange={upd("focusArea")}>
-            <option value="">Choose a focus area…</option>
-            {focusAreas.map((f) => (
-              <option key={f.id} value={f.name}>
-                {f.name}
-              </option>
-            ))}
-          </Select>
-          <Select label="Team" value={form.team} onChange={upd("team")}>
-            <option value="">Choose a team…</option>
-            {teams.map((t) => (
-              <option key={t.id} value={t.name}>
-                {t.name}
-              </option>
-            ))}
-          </Select>
-        </div>
+        <Select label="Focus area" value={form.focusArea} onChange={upd("focusArea")}>
+          <option value="">Choose a focus area…</option>
+          {focusAreas.map((f) => (
+            <option key={f.id} value={f.name}>
+              {f.name}
+            </option>
+          ))}
+        </Select>
         <label className="lt-field">
           <span className="lt-field__label">Summary</span>
           <textarea
@@ -158,12 +140,6 @@ export default function IdeaForm({ focusAreas, teams, onSubmitted }) {
             rows={2}
           />
         </label>
-        <Input
-          label="Impacted teams (comma-separated)"
-          placeholder="e.g. Sales, Support"
-          value={form.impactedTeams}
-          onChange={upd("impactedTeams")}
-        />
         <Input
           label="Your name *"
           placeholder="So reviewers know who to follow up with"

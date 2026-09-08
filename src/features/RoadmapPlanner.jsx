@@ -131,11 +131,7 @@ export default function RoadmapPlanner() {
         />
       )}
       {view === "submit" && (
-        <IdeaForm
-          focusAreas={focusAreas}
-          teams={teams}
-          onSubmitted={upsertInitiative}
-        />
+        <IdeaForm focusAreas={focusAreas} onSubmitted={upsertInitiative} />
       )}
       {view === "review" && (
         <ReviewQueue
