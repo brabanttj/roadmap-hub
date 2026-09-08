@@ -5,7 +5,7 @@ import "./PasswordGate.css";
 // Shared reviewer/admin password gating mutating actions (approve/reject a
 // submitted idea, schedule or edit a roadmap item, manage taxonomy). Idea
 // submission itself stays open to anyone.
-const GATE_PASSWORD = "prettyplease";
+const GATE_PASSWORD = "asdf";
 
 const PasswordGateContext = createContext(null);
 

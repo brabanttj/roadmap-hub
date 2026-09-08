@@ -8,9 +8,6 @@
   grid-template-columns: 1fr 1fr;
   gap: var(--lt-space-4);
 }
-.im-form__row--sched {
-  grid-template-columns: repeat(4, 1fr);
-}
 .im-form__actions {
   display: flex;
   justify-content: space-between;
@@ -25,8 +22,7 @@
 }
 
 @media (max-width: 560px) {
-  .im-form__row,
-  .im-form__row--sched {
+  .im-form__row {
     grid-template-columns: 1fr 1fr;
   }
 }

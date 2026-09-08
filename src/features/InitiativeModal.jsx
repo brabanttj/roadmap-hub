@@ -22,7 +22,6 @@ function weeksByMonth(year) {
 }
 
 function toFormState(initiative) {
-  const referenceDate = initiative?.startDate || initiative?.endDate;
   return {
     title: initiative?.title || "",
     focusArea: initiative?.focusArea || "",
@@ -35,7 +34,8 @@ function toFormState(initiative) {
     status: initiative?.status && initiative.status !== "idea" && initiative.status !== "rejected"
       ? initiative.status
       : "backlog",
-    year: referenceDate ? Number(referenceDate.slice(0, 4)) : REFERENCE_YEAR,
+    startYear: initiative?.startDate ? Number(initiative.startDate.slice(0, 4)) : REFERENCE_YEAR,
+    endYear: initiative?.endDate ? Number(initiative.endDate.slice(0, 4)) : REFERENCE_YEAR,
     startDate: initiative?.startDate || "",
     endDate: initiative?.endDate || "",
   };
@@ -50,14 +50,17 @@ export default function InitiativeModal({ initiative, focusAreas, teams, onClose
 
   const upd = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
   const valid = form.title.trim();
-  const weeks = weeksByMonth(form.year);
-  const yearOptions = YEAR_OPTIONS.includes(form.year) ? YEAR_OPTIONS : [...YEAR_OPTIONS, form.year].sort();
+  const startWeeks = weeksByMonth(form.startYear);
+  const endWeeks = weeksByMonth(form.endYear);
+  const yearOptionsFor = (year) => (YEAR_OPTIONS.includes(year) ? YEAR_OPTIONS : [...YEAR_OPTIONS, year].sort());
 
-  // Changing the year swaps the week options out from under the current
-  // selections -- clear them rather than leave a stale date from the old
-  // year silently mismatched with what the dropdown displays.
-  const onYearChange = (e) =>
-    setForm((f) => ({ ...f, year: Number(e.target.value), startDate: "", endDate: "" }));
+  // Changing a year swaps that side's week options out from under the
+  // current selection -- clear it rather than leave a stale date from the
+  // old year silently mismatched with what the dropdown displays. Start
+  // and end are independent, so an initiative can span two years (e.g.
+  // start Dec 2026, end Jan 2027).
+  const onStartYearChange = (e) => setForm((f) => ({ ...f, startYear: Number(e.target.value), startDate: "" }));
+  const onEndYearChange = (e) => setForm((f) => ({ ...f, endYear: Number(e.target.value), endDate: "" }));
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -175,16 +178,17 @@ export default function InitiativeModal({ initiative, focusAreas, teams, onClose
             placeholder="e.g. Sales, Support"
           />
 
-          <div className="im-form__row im-form__row--sched">
-            <Select label="Status" value={form.status} onChange={upd("status")}>
-              {STATUS_OPTIONS.map((s) => (
-                <option key={s} value={s}>
-                  {STATUS_LABEL[s]}
-                </option>
-              ))}
-            </Select>
-            <Select label="Year" value={form.year} onChange={onYearChange}>
-              {yearOptions.map((y) => (
+          <Select label="Status" value={form.status} onChange={upd("status")}>
+            {STATUS_OPTIONS.map((s) => (
+              <option key={s} value={s}>
+                {STATUS_LABEL[s]}
+              </option>
+            ))}
+          </Select>
+
+          <div className="im-form__row">
+            <Select label="Start year" value={form.startYear} onChange={onStartYearChange}>
+              {yearOptionsFor(form.startYear).map((y) => (
                 <option key={y} value={y}>
                   {y}
                 </option>
@@ -192,7 +196,7 @@ export default function InitiativeModal({ initiative, focusAreas, teams, onClose
             </Select>
             <Select label="Start week" value={form.startDate} onChange={upd("startDate")}>
               <option value="">Unscheduled</option>
-              {weeks.map((m) => (
+              {startWeeks.map((m) => (
                 <optgroup key={m.name} label={m.name}>
                   {m.weeks.map((w) => (
                     <option key={w.value} value={w.value}>
@@ -202,9 +206,18 @@ export default function InitiativeModal({ initiative, focusAreas, teams, onClose
                 </optgroup>
               ))}
             </Select>
+          </div>
+          <div className="im-form__row">
+            <Select label="End year" value={form.endYear} onChange={onEndYearChange}>
+              {yearOptionsFor(form.endYear).map((y) => (
+                <option key={y} value={y}>
+                  {y}
+                </option>
+              ))}
+            </Select>
             <Select label="End week" value={form.endDate} onChange={upd("endDate")}>
               <option value="">Unscheduled</option>
-              {weeks.map((m) => (
+              {endWeeks.map((m) => (
                 <optgroup key={m.name} label={m.name}>
                   {m.weeks.map((w) => (
                     <option key={w.value} value={w.value}>

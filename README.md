@@ -45,7 +45,7 @@ npm run preview          # serve the production build (no API — static only)
 ## Password gate
 
 Mutating actions (review decisions, scheduling/editing initiatives, taxonomy
-CRUD) are gated behind a shared password (`prettyplease`), set in
+CRUD) are gated behind a shared password (`asdf`), set in
 `src/lib/PasswordGate.jsx` (`GATE_PASSWORD`). This is a lightweight
 UX gate, not real authentication — the API itself doesn't enforce it.
 Idea submission itself stays open to anyone.
