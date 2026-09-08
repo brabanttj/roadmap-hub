@@ -312,7 +312,14 @@ export default function RoadmapGantt({ initiatives, focusAreas, teams, onUpsert,
               direct measurement while debugging this exact table), so the
               only fully reliable fix is to not rely on it at all: this
               panel simply never scrolls horizontally, and its vertical
-              scroll is kept in sync with the date panel via JS below. */}
+              scroll is kept in sync with the date panel via JS below.
+              (A single shared scrolling ancestor for both panels was
+              tried instead, but giving the date panel `overflow-x`
+              -- needed for its own horizontal scrollbar -- makes it
+              register as ITS OWN sticky scroll container per the CSS
+              Overflow spec's visible/non-visible axis-pairing rule, which
+              breaks its header's vertical stickiness. Two independently
+              vertically-scrolling panels, kept in sync, avoids that.) */}
           <div className="rg-sidebar" ref={sidebarRef} onScroll={onSidebarScroll}>
             <div className="rg-sidebargrid" style={{ gridTemplateRows: rowsTemplate }}>
               <div className="rg-headcell rg-headcell--label" style={{ gridRow: "1 / 3", gridColumn: 1 }}>
