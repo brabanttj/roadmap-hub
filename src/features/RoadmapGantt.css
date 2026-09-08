@@ -21,7 +21,12 @@
      anchors to the nearest scrolling ancestor, so with no real scrolling
      happening here, the sticky header/label column would just scroll away
      with the page on any vertical scroll. */
-  max-height: 75vh;
+  /* Sized to leave room for everything above it (hero, tabs, toolbar) so
+     the table's OWN bottom edge -- where its horizontal scrollbar lives --
+     is always within the initial viewport. Without this, that edge sits
+     below the fold and the page itself has to be scrolled just to reach
+     the horizontal scrollbar, which defeats having one. */
+  max-height: calc(100vh - 340px);
   /* `scroll` (not `auto`) so both scrollbars are always rendered, even
      when a given axis doesn't currently overflow -- a constant affordance
      that this table scrolls, and no layout shift when it starts to.

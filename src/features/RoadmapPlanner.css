@@ -1,16 +1,16 @@
 .rp-shell {
   max-width: 1800px;
   margin: 0 auto;
-  padding: var(--lt-space-8) var(--lt-space-6) var(--lt-space-10);
+  padding: var(--lt-space-6) var(--lt-space-6) var(--lt-space-2);
 }
 
 .rp-header {
   text-align: center;
-  padding: var(--lt-space-4) 0 var(--lt-space-6);
+  padding: var(--lt-space-2) 0 var(--lt-space-4);
 }
 .rp-header__title {
-  font-size: clamp(2rem, 4vw, 3rem);
-  margin: var(--lt-space-3) auto var(--lt-space-3);
+  font-size: clamp(1.5rem, 3vw, 2.25rem);
+  margin: var(--lt-space-2) auto var(--lt-space-2);
 }
 .rp-header__sub {
   max-width: 60ch;
@@ -24,7 +24,7 @@
 .cf-tabs {
   display: flex;
   gap: var(--lt-space-2);
-  margin-bottom: var(--lt-space-6);
+  margin-bottom: var(--lt-space-4);
   flex-wrap: wrap;
 }
 .cf-tab {
@@ -67,7 +67,7 @@
 }
 
 .cf-toolbar {
-  margin-bottom: var(--lt-space-6);
+  margin-bottom: var(--lt-space-4);
 }
 .rb-intro {
   margin: var(--lt-space-4) 0 var(--lt-space-5);
