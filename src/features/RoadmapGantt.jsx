@@ -14,9 +14,21 @@ const REFERENCE_YEAR = new Date().getFullYear();
 const TODAY = new Date();
 TODAY.setHours(0, 0, 0, 0);
 
-const MONTH_OPTIONS = MONTH_NAMES.map((m, idx) => ({ value: String(idx + 1), label: m }));
-const COLUMN_OPTIONS = [{ value: "backlog", label: "Backlog" }, ...MONTH_OPTIONS];
-const YEAR_OPTIONS = [REFERENCE_YEAR - 1, REFERENCE_YEAR, REFERENCE_YEAR + 1];
+// Month + Year combined into one option per (year, month) -- e.g. "Jan
+// 2026" -- so a single multi-select can mix and match any months across
+// any of these years, instead of one shared Year applying to every pick.
+const YEAR_RANGE = [REFERENCE_YEAR - 1, REFERENCE_YEAR, REFERENCE_YEAR + 1];
+const MONTH_YEAR_OPTIONS = YEAR_RANGE.flatMap((y) =>
+  MONTH_NAMES.map((name, idx) => ({ value: `${y}-${idx + 1}`, label: `${name} ${y}`, year: y, month: idx + 1 }))
+);
+const COLUMN_OPTIONS = [{ value: "backlog", label: "Backlog" }, ...MONTH_YEAR_OPTIONS];
+// Default (nothing explicitly picked) -- the current year's 12 months plus
+// Backlog, matching what "All Months" used to mean before Year existed as
+// a separate control.
+const DEFAULT_COLUMN_VALUES = [
+  ...MONTH_NAMES.map((_, idx) => `${REFERENCE_YEAR}-${idx + 1}`),
+  "backlog",
+];
 
 // Explicit (not "auto") header row heights: the sidebar panel and the date
 // panel are two independent DOM trees sitting side by side, so their row
@@ -79,8 +91,7 @@ export default function RoadmapGantt({ initiatives, focusAreas, teams, onUpsert,
   const [focusAreaFilter, setFocusAreaFilter] = useState([]); // [] = all
   const [teamFilter, setTeamFilter] = useState([]); // [] = all
   const [statusFilter, setStatusFilter] = useState([]); // [] = all
-  const [columnFilter, setColumnFilter] = useState([]); // [] = all months + backlog
-  const [year, setYear] = useState(REFERENCE_YEAR);
+  const [columnFilter, setColumnFilter] = useState([]); // [] = current year's months + backlog
   const [groupBy, setGroupBy] = useState("team"); // "team" | "focusArea"
   const [editing, setEditing] = useState(null); // { initiative } | { isNew: true } | null
   const [hover, setHover] = useState(null); // { item, rect } | null -- drives the portal tooltip
@@ -118,25 +129,34 @@ export default function RoadmapGantt({ initiatives, focusAreas, teams, onUpsert,
   const primaryFallback = groupBy === "team" ? "(No team)" : "(No focus area)";
   const secondaryLabel = groupBy === "team" ? "Focus Area" : "Team";
 
-  // Columns actually rendered: each selected month broken down into its
-  // Mondays, in calendar order; Backlog forced last whenever it's part of
-  // the selection (or the default/unfiltered "everything" view) -- never
+  // Columns actually rendered: each selected (year, month) broken down into
+  // its Mondays, in chronological order; Backlog forced last whenever it's
+  // part of the selection (or the default/unfiltered view) -- never
   // wherever the user happened to click it.
   const activeColumns = useMemo(() => {
-    const chosen = columnFilter.length === 0 ? COLUMN_OPTIONS.map((o) => o.value) : columnFilter;
-    const months = chosen
+    const chosen = columnFilter.length === 0 ? DEFAULT_COLUMN_VALUES : columnFilter;
+    const monthYears = chosen
       .filter((v) => v !== "backlog")
-      .map(Number)
-      .sort((a, b) => a - b);
+      .map((v) => {
+        const [y, m] = v.split("-").map(Number);
+        return { year: y, month: m };
+      })
+      .sort((a, b) => a.year - b.year || a.month - b.month);
     const cols = [];
-    for (const m of months) {
-      for (const monday of mondaysInMonth(year, m)) {
-        cols.push({ type: "week", month: m, value: monday.toISOString().slice(0, 10), label: formatWeekLabel(monday) });
+    for (const { year, month } of monthYears) {
+      for (const monday of mondaysInMonth(year, month)) {
+        cols.push({
+          type: "week",
+          year,
+          month,
+          value: monday.toISOString().slice(0, 10),
+          label: formatWeekLabel(monday),
+        });
       }
     }
     if (chosen.includes("backlog")) cols.push({ type: "backlog", value: "backlog", label: "Backlog" });
     return cols;
-  }, [columnFilter, year]);
+  }, [columnFilter]);
 
   // Groups adjacent week columns under one month super-header cell.
   const monthBands = useMemo(() => {
@@ -150,12 +170,17 @@ export default function RoadmapGantt({ initiatives, focusAreas, teams, onUpsert,
         continue;
       }
       let j = i;
-      while (j + 1 < activeColumns.length && activeColumns[j + 1].month === col.month) j++;
-      bands.push({ label: `${MONTH_NAMES[col.month - 1]} ${year}`, startIdx: i, endIdx: j });
+      while (
+        j + 1 < activeColumns.length &&
+        activeColumns[j + 1].month === col.month &&
+        activeColumns[j + 1].year === col.year
+      )
+        j++;
+      bands.push({ label: `${MONTH_NAMES[col.month - 1]} ${col.year}`, startIdx: i, endIdx: j });
       i = j + 1;
     }
     return bands;
-  }, [activeColumns, year]);
+  }, [activeColumns]);
 
   const todayColIndex = activeColumns.findIndex((c) => {
     if (c.type !== "week") return false;
@@ -259,13 +284,6 @@ export default function RoadmapGantt({ initiatives, focusAreas, teams, onUpsert,
             selected={columnFilter}
             onChange={setColumnFilter}
           />
-          <Select value={year} onChange={(e) => setYear(Number(e.target.value))} aria-label="Year">
-            {YEAR_OPTIONS.map((y) => (
-              <option key={y} value={y}>
-                {y}
-              </option>
-            ))}
-          </Select>
           <Select value={groupBy} onChange={(e) => setGroupBy(e.target.value)} aria-label="Group by">
             <option value="team">Group by Team</option>
             <option value="focusArea">Group by Focus Area</option>

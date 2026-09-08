@@ -14,9 +14,17 @@
 }
 .rp-header__sub {
   max-width: 60ch;
+  min-height: 1.6em;
   margin: 0 auto;
   color: var(--lt-text-secondary);
   font-size: var(--lt-fs-md);
+  font-style: italic;
+  animation: rp-quote-fade 500ms ease;
+}
+@keyframes rp-quote-fade {
+  from {
+    opacity: 0;
+  }
 }
 
 /* Tabs — shared with the empty-state / banner classes below across every

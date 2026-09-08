@@ -9,6 +9,23 @@ import "./RoadmapPlanner.css";
 
 const FRIENDLY_ERROR = "Something went wrong. Please try again.";
 
+// Cycled in the header subtext, purely for morale. Rotates on a timer --
+// see the effect below.
+const ROADMAP_QUOTES = [
+  "A roadmap is just a list of future arguments, sorted by quarter.",
+  "Roadmaps are promises written in pencil—until someone screenshots the slide.",
+  "A roadmap is just a list of future disappointments, organized by quarter.",
+  "Our roadmap is customer-driven—by whichever customer emailed most recently.",
+  "Roadmaps are promises written in pencil, presented in PowerPoint, and remembered as contracts.",
+  "The roadmap is strategic until Sales shares it with a prospect.",
+  "Every roadmap has three horizons: now, next, and ‘why is this still on here?’",
+  "A roadmap is how product says ‘maybe’ in a font executives can understand.",
+  "We don’t miss roadmap dates; we discover new definitions of ‘Q3.’",
+  "The roadmap is a living document. Mostly because it keeps getting resurrected.",
+  "Nothing is more permanent than a temporary roadmap commitment.",
+  "Product roadmaps: where confidence is high, estimates are low, and dependencies are invisible.",
+];
+
 export default function RoadmapPlanner() {
   const [focusAreas, setFocusAreas] = useState([]);
   const [teams, setTeams] = useState([]);
@@ -16,6 +33,14 @@ export default function RoadmapPlanner() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [view, setView] = useState("roadmap"); // roadmap | submit | review | taxonomy
+  const [quoteIndex, setQuoteIndex] = useState(0);
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      setQuoteIndex((i) => (i + 1) % ROADMAP_QUOTES.length);
+    }, 5000);
+    return () => clearInterval(id);
+  }, []);
 
   useEffect(() => {
     fetch("/api/bootstrap")
@@ -58,11 +83,10 @@ export default function RoadmapPlanner() {
   return (
     <div className="rp-shell">
       <header className="rp-header">
-        <span className="lt-eyebrow">Roadmap Hub</span>
-        <h1 className="rp-header__title">Ideas in, roadmap out</h1>
-        <p className="rp-header__sub">
-          Submit ideas, review and approve them, and manage the roadmap they
-          become.
+        <span className="lt-eyebrow">LendingTree Insurance Division</span>
+        <h1 className="rp-header__title">Roadmap Hub</h1>
+        <p className="rp-header__sub" key={quoteIndex}>
+          {ROADMAP_QUOTES[quoteIndex]}
         </p>
       </header>
 
