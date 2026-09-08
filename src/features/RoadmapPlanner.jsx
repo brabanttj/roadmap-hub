@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Card } from "../components/ui/index.js";
+import { Card, Icon } from "../components/ui/index.js";
 import RoadmapGantt from "./RoadmapGantt.jsx";
 import IdeaForm from "./IdeaForm.jsx";
 import ReviewQueue from "./ReviewQueue.jsx";
@@ -82,6 +82,9 @@ export default function RoadmapPlanner() {
 
   return (
     <div className="rp-shell">
+      <div className="cf-watermark" aria-hidden="true">
+        <Icon name="brandLeaf" preserveAspectRatio="none" />
+      </div>
       <header className="rp-header">
         <span className="lt-eyebrow">LendingTree Insurance Division</span>
         <h1 className="rp-header__title">Roadmap Hub</h1>

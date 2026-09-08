@@ -6,6 +6,14 @@
  * app actually uses (see ai-capability-finder's Icon.jsx for the full set).
  */
 const PATHS = {
+  brandLeaf: {
+    // Traced from LendingTree's own real logomark asset (qw-lt-color.svg,
+    // served from the funnel-storybook static bundle), not hand-approximated.
+    viewBox: "305 30 35 30",
+    path: (
+      <path d="m329.11 37.48a99.16 99.16 0 0 0 -10.11 1.68c-5.63 1.4-5.53 6.1-5.53 8v6.27c0 .08.07.1.12 0a56.86 56.86 0 0 1 7.95-8.58s0 0 0 0a25.65 25.65 0 0 0 -4.83 2.08c0-.45 0-.75 0-.8 0-3.2 1.86-4.06 4.1-4.68a38.21 38.21 0 0 1 5.24-.8s-.28 2-.64 6c-.26 3-2.44 3.63-5.47 3.63h-1.72a8.61 8.61 0 0 0 -1.55 3.15h3.33c6.38 0 7.8-2.81 8.1-7a67.77 67.77 0 0 1 1.08-8.93.06.06 0 0 0 -.07-.02z" />
+    ),
+  },
   trash: {
     viewBox: "0 0 48 48",
     path: (
