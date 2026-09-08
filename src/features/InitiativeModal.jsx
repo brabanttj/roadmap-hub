@@ -6,19 +6,23 @@ import "./InitiativeModal.css";
 const FRIENDLY_ERROR = "Something went wrong. Please try again.";
 const STATUS_OPTIONS = ["backlog", "in_development", "completed"];
 const REFERENCE_YEAR = new Date().getFullYear();
+const YEAR_OPTIONS = [REFERENCE_YEAR - 1, REFERENCE_YEAR, REFERENCE_YEAR + 1];
 
-// Every Monday of the reference year, grouped by month -- the same week
-// list the Gantt view itself renders, so scheduling here always lines up
-// with a real column on the roadmap.
-const WEEKS_BY_MONTH = MONTH_NAMES.map((name, idx) => ({
-  name,
-  weeks: mondaysInMonth(REFERENCE_YEAR, idx + 1).map((d) => ({
-    value: d.toISOString().slice(0, 10),
-    label: formatWeekLabel(d),
-  })),
-}));
+// Every Monday of the given year, grouped by month -- the same week list
+// the Gantt view itself renders, so scheduling here always lines up with a
+// real column on the roadmap.
+function weeksByMonth(year) {
+  return MONTH_NAMES.map((name, idx) => ({
+    name,
+    weeks: mondaysInMonth(year, idx + 1).map((d) => ({
+      value: d.toISOString().slice(0, 10),
+      label: formatWeekLabel(d),
+    })),
+  }));
+}
 
 function toFormState(initiative) {
+  const referenceDate = initiative?.startDate || initiative?.endDate;
   return {
     title: initiative?.title || "",
     focusArea: initiative?.focusArea || "",
@@ -31,6 +35,7 @@ function toFormState(initiative) {
     status: initiative?.status && initiative.status !== "idea" && initiative.status !== "rejected"
       ? initiative.status
       : "backlog",
+    year: referenceDate ? Number(referenceDate.slice(0, 4)) : REFERENCE_YEAR,
     startDate: initiative?.startDate || "",
     endDate: initiative?.endDate || "",
   };
@@ -45,6 +50,14 @@ export default function InitiativeModal({ initiative, focusAreas, teams, onClose
 
   const upd = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
   const valid = form.title.trim();
+  const weeks = weeksByMonth(form.year);
+  const yearOptions = YEAR_OPTIONS.includes(form.year) ? YEAR_OPTIONS : [...YEAR_OPTIONS, form.year].sort();
+
+  // Changing the year swaps the week options out from under the current
+  // selections -- clear them rather than leave a stale date from the old
+  // year silently mismatched with what the dropdown displays.
+  const onYearChange = (e) =>
+    setForm((f) => ({ ...f, year: Number(e.target.value), startDate: "", endDate: "" }));
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -170,9 +183,16 @@ export default function InitiativeModal({ initiative, focusAreas, teams, onClose
                 </option>
               ))}
             </Select>
+            <Select label="Year" value={form.year} onChange={onYearChange}>
+              {yearOptions.map((y) => (
+                <option key={y} value={y}>
+                  {y}
+                </option>
+              ))}
+            </Select>
             <Select label="Start week" value={form.startDate} onChange={upd("startDate")}>
               <option value="">Unscheduled</option>
-              {WEEKS_BY_MONTH.map((m) => (
+              {weeks.map((m) => (
                 <optgroup key={m.name} label={m.name}>
                   {m.weeks.map((w) => (
                     <option key={w.value} value={w.value}>
@@ -184,7 +204,7 @@ export default function InitiativeModal({ initiative, focusAreas, teams, onClose
             </Select>
             <Select label="End week" value={form.endDate} onChange={upd("endDate")}>
               <option value="">Unscheduled</option>
-              {WEEKS_BY_MONTH.map((m) => (
+              {weeks.map((m) => (
                 <optgroup key={m.name} label={m.name}>
                   {m.weeks.map((w) => (
                     <option key={w.value} value={w.value}>

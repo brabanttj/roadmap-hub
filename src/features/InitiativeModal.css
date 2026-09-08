@@ -9,7 +9,7 @@
   gap: var(--lt-space-4);
 }
 .im-form__row--sched {
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
 }
 .im-form__actions {
   display: flex;
