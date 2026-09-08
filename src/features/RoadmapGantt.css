@@ -1,8 +1,17 @@
 .rg-toolbar__grid {
-  display: grid;
-  grid-template-columns: 1.6fr 1fr 1fr 0.8fr auto;
+  display: flex;
+  flex-wrap: wrap;
   gap: var(--lt-space-3);
   align-items: center;
+}
+.rg-toolbar__grid > * {
+  flex: 1 1 150px;
+}
+.rg-toolbar__grid > :first-child {
+  flex: 2 1 220px;
+}
+.rg-toolbar__grid > :last-child {
+  flex: 0 0 auto;
 }
 
 .rg-scroll {
@@ -13,11 +22,27 @@
      happening here, the sticky header/label column would just scroll away
      with the page on any vertical scroll. */
   max-height: 75vh;
-  overflow: auto;
+  /* `scroll` (not `auto`) so both scrollbars are always rendered, even
+     when a given axis doesn't currently overflow -- a constant affordance
+     that this table scrolls, and no layout shift when it starts to.
+     `scrollbar-gutter` backs that up for the vertical axis on browsers
+     that otherwise use overlay (auto-hiding) scrollbars. */
+  overflow: scroll;
+  scrollbar-gutter: stable;
   border: 1px solid var(--lt-color-border);
   border-radius: var(--lt-radius-lg);
   background: var(--lt-white);
   box-shadow: var(--lt-shadow-sm);
+}
+
+/* A visible track (not just a thumb that appears on hover/drag) so the
+   scrollbar reads as a permanent fixture of this table, not the shared
+   .lt-scroll's default transparent-track thin style used elsewhere. */
+.rg-scroll {
+  scrollbar-color: var(--lt-gray-300) var(--lt-gray);
+}
+.rg-scroll::-webkit-scrollbar-track {
+  background: var(--lt-gray);
 }
 
 .rg-grid {
@@ -42,6 +67,14 @@
   text-align: center;
   letter-spacing: 0.03em;
   border-bottom: 1px solid var(--lt-color-border);
+  /* Never wrap the date -- and `overflow: hidden` resets the grid item's
+     automatic content-based minimum size to 0, so a long label can never
+     force ITS column wider than the others sharing the same `minmax(...)`
+     track size. Without this, one wrapped/overflowing date would break
+     "every column is the same width". */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .rg-headcell--month {
   padding: var(--lt-space-3) var(--lt-space-2) var(--lt-space-1);

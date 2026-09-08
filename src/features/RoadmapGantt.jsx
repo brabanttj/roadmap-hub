@@ -1,5 +1,5 @@
 import { Fragment, useMemo, useState } from "react";
-import { Card, Input, MultiSelect, Button, IllustrationBadge } from "../components/ui/index.js";
+import { Card, Input, Select, MultiSelect, Button, IllustrationBadge } from "../components/ui/index.js";
 import { usePasswordGate } from "../lib/PasswordGate.jsx";
 import { MONTH_NAMES, STATUS_LABEL, mondaysInMonth, formatWeekLabel } from "../lib/text.js";
 import InitiativeModal from "./InitiativeModal.jsx";
@@ -7,7 +7,8 @@ import "./RoadmapGantt.css";
 
 // Excluded from the Gantt entirely -- ideas haven't been reviewed yet, and
 // rejected ideas never became roadmap work (see the Rejected tab for those).
-const VISIBLE_STATUSES = new Set(["backlog", "in_development", "completed"]);
+const VISIBLE_STATUSES = ["backlog", "in_development", "completed"];
+const STATUS_OPTIONS = VISIBLE_STATUSES.map((s) => ({ value: s, label: STATUS_LABEL[s] }));
 const REFERENCE_YEAR = new Date().getFullYear();
 const TODAY = new Date();
 TODAY.setHours(0, 0, 0, 0);
@@ -15,14 +16,13 @@ TODAY.setHours(0, 0, 0, 0);
 const MONTH_OPTIONS = MONTH_NAMES.map((m, idx) => ({ value: String(idx + 1), label: m }));
 const COLUMN_OPTIONS = [{ value: "backlog", label: "Backlog" }, ...MONTH_OPTIONS];
 
-// The two fixed left columns (Initiative, Focus area) before the
-// week/backlog columns start. Grid columns are 1-indexed, so a data column
-// at array index i sits at grid column i + 3.
+// The two fixed left columns (Initiative, then Focus Area or Team,
+// whichever isn't driving the row grouping) before the week/backlog
+// columns start. Grid columns are 1-indexed, so a data column at array
+// index i sits at grid column i + 3.
 const FIXED_COLS = 2;
 const gridColOf = (i) => i + FIXED_COLS + 1;
 
-// Which columns (by index into `activeColumns`) a scheduled/unscheduled
-// initiative occupies, independent of which columns are currently shown.
 // Every field on an initiative, for the hover card -- so a reviewer never
 // has to open the edit modal just to read something.
 function initiativeFacts(item) {
@@ -50,6 +50,8 @@ function initiativeFacts(item) {
   ];
 }
 
+// Which columns (by index into `activeColumns`) a scheduled/unscheduled
+// initiative occupies, independent of which columns are currently shown.
 function occupiedIndices(item, activeColumns) {
   if (item.startMonth == null || item.endMonth == null) {
     const idx = activeColumns.findIndex((c) => c.type === "backlog");
@@ -67,14 +69,25 @@ export default function RoadmapGantt({ initiatives, focusAreas, teams, onUpsert,
   const [search, setSearch] = useState("");
   const [focusAreaFilter, setFocusAreaFilter] = useState([]); // [] = all
   const [teamFilter, setTeamFilter] = useState([]); // [] = all
+  const [statusFilter, setStatusFilter] = useState([]); // [] = all
   const [columnFilter, setColumnFilter] = useState([]); // [] = all months + backlog
+  const [groupBy, setGroupBy] = useState("team"); // "team" | "focusArea"
   const [editing, setEditing] = useState(null); // { initiative } | { isNew: true } | null
 
   const teamOrder = teams.map((t) => t.name);
+  const focusAreaOrder = focusAreas.map((f) => f.name);
   const rank = (list, value) => {
     const idx = list.indexOf(value);
     return idx === -1 ? Infinity : idx;
   };
+
+  // Which field drives the row grouping vs. which shows as the secondary
+  // (non-grouped) column -- flipped by the Group By control.
+  const primaryField = groupBy === "team" ? "team" : "focusArea";
+  const secondaryField = groupBy === "team" ? "focusArea" : "team";
+  const primaryOrder = groupBy === "team" ? teamOrder : focusAreaOrder;
+  const primaryFallback = groupBy === "team" ? "(No team)" : "(No focus area)";
+  const secondaryLabel = groupBy === "team" ? "Focus Area" : "Team";
 
   // Columns actually rendered: each selected month broken down into its
   // Mondays, in calendar order; Backlog forced last whenever it's part of
@@ -126,35 +139,37 @@ export default function RoadmapGantt({ initiatives, focusAreas, teams, onUpsert,
   const visible = useMemo(() => {
     const q = search.trim().toLowerCase();
     return initiatives.filter((i) => {
-      if (!VISIBLE_STATUSES.has(i.status)) return false;
+      if (!VISIBLE_STATUSES.includes(i.status)) return false;
+      if (statusFilter.length && !statusFilter.includes(i.status)) return false;
       if (focusAreaFilter.length && !focusAreaFilter.includes(i.focusArea)) return false;
       if (teamFilter.length && !teamFilter.includes(i.team)) return false;
       if (q && !i.title.toLowerCase().includes(q)) return false;
       if (occupiedIndices(i, activeColumns).length === 0) return false;
       return true;
     });
-  }, [initiatives, search, focusAreaFilter, teamFilter, activeColumns]);
+  }, [initiatives, search, statusFilter, focusAreaFilter, teamFilter, activeColumns]);
 
-  // Grouped by TEAM only -- focus area is shown as its own column per row
-  // instead of a second grouping level, since a team's initiatives can span
-  // several focus areas (nesting would duplicate the same team under each).
+  // Grouped by the chosen primary field only -- the secondary field is
+  // shown as its own column per row instead of a second grouping level,
+  // since e.g. a team's initiatives can span several focus areas (nesting
+  // would duplicate the same group under each).
   const rows = useMemo(() => {
-    const byTeam = new Map();
+    const byGroup = new Map();
     for (const i of visible) {
-      const team = i.team || "(No team)";
-      if (!byTeam.has(team)) byTeam.set(team, []);
-      byTeam.get(team).push(i);
+      const key = i[primaryField] || primaryFallback;
+      if (!byGroup.has(key)) byGroup.set(key, []);
+      byGroup.get(key).push(i);
     }
-    const teamEntries = [...byTeam.entries()].sort(
-      (a, b) => rank(teamOrder, a[0]) - rank(teamOrder, b[0]) || a[0].localeCompare(b[0])
+    const entries = [...byGroup.entries()].sort(
+      (a, b) => rank(primaryOrder, a[0]) - rank(primaryOrder, b[0]) || a[0].localeCompare(b[0])
     );
     const out = [];
-    for (const [team, items] of teamEntries) {
-      out.push({ type: "team", key: `team-${team}`, label: team, count: items.length });
+    for (const [label, items] of entries) {
+      out.push({ type: "group", key: `group-${label}`, label, count: items.length });
       for (const item of items) out.push({ type: "item", key: `item-${item.id}`, item });
     }
     return out;
-  }, [visible, teamOrder]);
+  }, [visible, primaryField, primaryOrder, primaryFallback]);
 
   const save = async (payload, id) => {
     const isNew = !id;
@@ -203,11 +218,21 @@ export default function RoadmapGantt({ initiatives, focusAreas, teams, onUpsert,
             onChange={setTeamFilter}
           />
           <MultiSelect
+            label="Statuses"
+            options={STATUS_OPTIONS}
+            selected={statusFilter}
+            onChange={setStatusFilter}
+          />
+          <MultiSelect
             label="Months"
             options={COLUMN_OPTIONS}
             selected={columnFilter}
             onChange={setColumnFilter}
           />
+          <Select value={groupBy} onChange={(e) => setGroupBy(e.target.value)} aria-label="Group by">
+            <option value="team">Group by Team</option>
+            <option value="focusArea">Group by Focus Area</option>
+          </Select>
           <Button variant="accent" onClick={guard(() => setEditing({ isNew: true }))}>
             + Add initiative
           </Button>
@@ -227,7 +252,7 @@ export default function RoadmapGantt({ initiatives, focusAreas, teams, onUpsert,
           <div
             className="rg-grid"
             style={{
-              gridTemplateColumns: `220px 150px repeat(${activeColumns.length}, minmax(56px, 1fr))`,
+              gridTemplateColumns: `220px 150px repeat(${activeColumns.length}, minmax(76px, 1fr))`,
               gridTemplateRows: `auto auto repeat(${bodyRowCount}, 44px)`,
             }}
           >
@@ -243,7 +268,7 @@ export default function RoadmapGantt({ initiatives, focusAreas, teams, onUpsert,
               Initiative
             </div>
             <div className="rg-headcell rg-headcell--focus" style={{ gridRow: "1 / 3", gridColumn: 2 }}>
-              Focus Area
+              {secondaryLabel}
             </div>
             {monthBands.map((band) => (
               <div
@@ -266,7 +291,15 @@ export default function RoadmapGantt({ initiatives, focusAreas, teams, onUpsert,
             ))}
 
             {rows.map((r, idx) => (
-              <GridRow key={r.key} row={r} gridRow={idx + 3} activeColumns={activeColumns} guard={guard} setEditing={setEditing} />
+              <GridRow
+                key={r.key}
+                row={r}
+                gridRow={idx + 3}
+                activeColumns={activeColumns}
+                secondaryField={secondaryField}
+                guard={guard}
+                setEditing={setEditing}
+              />
             ))}
           </div>
         </div>
@@ -286,8 +319,8 @@ export default function RoadmapGantt({ initiatives, focusAreas, teams, onUpsert,
   );
 }
 
-function GridRow({ row, gridRow, activeColumns, guard, setEditing }) {
-  if (row.type === "team") {
+function GridRow({ row, gridRow, activeColumns, secondaryField, guard, setEditing }) {
+  if (row.type === "group") {
     return (
       <div className="rg-teamband" style={{ gridRow, gridColumn: "1 / -1" }}>
         <span className="rg-teamband__pin">
@@ -321,7 +354,7 @@ function GridRow({ row, gridRow, activeColumns, guard, setEditing }) {
         </div>
       </button>
       <div className="rg-focuscell" style={{ gridRow, gridColumn: 2 }}>
-        {item.focusArea || "—"}
+        {item[secondaryField] || "—"}
       </div>
       <div
         className={`rg-bar rg-bar--${item.status}`}
