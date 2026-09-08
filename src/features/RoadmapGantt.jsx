@@ -1,4 +1,5 @@
-import { Fragment, useMemo, useState } from "react";
+import { Fragment, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Card, Input, Select, MultiSelect, Button, IllustrationBadge } from "../components/ui/index.js";
 import { usePasswordGate } from "../lib/PasswordGate.jsx";
 import { MONTH_NAMES, STATUS_LABEL, mondaysInMonth, formatWeekLabel } from "../lib/text.js";
@@ -16,12 +17,11 @@ TODAY.setHours(0, 0, 0, 0);
 const MONTH_OPTIONS = MONTH_NAMES.map((m, idx) => ({ value: String(idx + 1), label: m }));
 const COLUMN_OPTIONS = [{ value: "backlog", label: "Backlog" }, ...MONTH_OPTIONS];
 
-// The two fixed left columns (Initiative, then Focus Area or Team,
-// whichever isn't driving the row grouping) before the week/backlog
-// columns start. Grid columns are 1-indexed, so a data column at array
-// index i sits at grid column i + 3.
-const FIXED_COLS = 2;
-const gridColOf = (i) => i + FIXED_COLS + 1;
+// Explicit (not "auto") header row heights: the sidebar panel and the date
+// panel are two independent DOM trees sitting side by side, so their row
+// tracks must match in pixels exactly or the rows won't line up.
+const HEAD_ROW_H = 34;
+const BODY_ROW_H = 44;
 
 // Every field on an initiative, for the hover card -- so a reviewer never
 // has to open the edit modal just to read something.
@@ -73,6 +73,25 @@ export default function RoadmapGantt({ initiatives, focusAreas, teams, onUpsert,
   const [columnFilter, setColumnFilter] = useState([]); // [] = all months + backlog
   const [groupBy, setGroupBy] = useState("team"); // "team" | "focusArea"
   const [editing, setEditing] = useState(null); // { initiative } | { isNew: true } | null
+  const [hover, setHover] = useState(null); // { item, rect } | null -- drives the portal tooltip
+
+  const sidebarRef = useRef(null);
+  const hscrollRef = useRef(null);
+  const syncingRef = useRef(false);
+  const onHscrollScroll = (e) => {
+    if (syncingRef.current) return;
+    syncingRef.current = true;
+    if (sidebarRef.current) sidebarRef.current.scrollTop = e.currentTarget.scrollTop;
+    syncingRef.current = false;
+    setHover(null);
+  };
+  const onSidebarScroll = (e) => {
+    if (syncingRef.current) return;
+    syncingRef.current = true;
+    if (hscrollRef.current) hscrollRef.current.scrollTop = e.currentTarget.scrollTop;
+    syncingRef.current = false;
+    setHover(null);
+  };
 
   const teamOrder = teams.map((t) => t.name);
   const focusAreaOrder = focusAreas.map((f) => f.name);
@@ -192,7 +211,8 @@ export default function RoadmapGantt({ initiatives, focusAreas, teams, onUpsert,
   };
 
   const bodyRowCount = rows.length;
-  const lastRowLine = bodyRowCount + 3; // 2 header rows + N body rows -> N+2 tracks -> line N+3
+  const rowsTemplate = `${HEAD_ROW_H}px ${HEAD_ROW_H}px repeat(${bodyRowCount}, ${BODY_ROW_H}px)`;
+  const lastRowLine = bodyRowCount + 3;
 
   return (
     <>
@@ -248,59 +268,69 @@ export default function RoadmapGantt({ initiatives, focusAreas, teams, onUpsert,
           </p>
         </Card>
       ) : (
-        <div className="rg-scroll lt-scroll">
-          <div
-            className="rg-grid"
-            style={{
-              gridTemplateColumns: `220px 150px repeat(${activeColumns.length}, minmax(76px, 1fr))`,
-              gridTemplateRows: `auto auto repeat(${bodyRowCount}, 44px)`,
-            }}
-          >
-            {activeColumns.map((col, i) => (
-              <div
-                key={`colbg-${col.value}`}
-                className={`rg-colbg${i % 2 === 1 ? " rg-colbg--alt" : ""}${i === todayColIndex ? " rg-colbg--today" : ""}`}
-                style={{ gridColumn: gridColOf(i), gridRow: `1 / ${lastRowLine}` }}
-              />
-            ))}
-
-            <div className="rg-headcell rg-headcell--label" style={{ gridRow: "1 / 3", gridColumn: 1 }}>
-              Initiative
-            </div>
-            <div className="rg-headcell rg-headcell--focus" style={{ gridRow: "1 / 3", gridColumn: 2 }}>
-              {secondaryLabel}
-            </div>
-            {monthBands.map((band) => (
-              <div
-                key={`band-${band.startIdx}`}
-                className="rg-headcell rg-headcell--month"
-                style={{ gridRow: 1, gridColumn: `${gridColOf(band.startIdx)} / ${gridColOf(band.endIdx) + 1}` }}
-              >
-                {band.label}
+        <div className="rg-tablewrap">
+          {/* Sidebar: Initiative + secondary-field columns. A completely
+              separate, non-horizontally-scrolling panel -- not a "sticky"
+              column of the date grid. CSS position:sticky on a grid item
+              stops tracking correctly once scrolled roughly past its own
+              track's width in a very wide implicit grid (confirmed via
+              direct measurement while debugging this exact table), so the
+              only fully reliable fix is to not rely on it at all: this
+              panel simply never scrolls horizontally, and its vertical
+              scroll is kept in sync with the date panel via JS below. */}
+          <div className="rg-sidebar" ref={sidebarRef} onScroll={onSidebarScroll}>
+            <div className="rg-sidebargrid" style={{ gridTemplateRows: rowsTemplate }}>
+              <div className="rg-headcell rg-headcell--label" style={{ gridRow: "1 / 3", gridColumn: 1 }}>
+                Initiative
               </div>
-            ))}
-            {activeColumns.map((col, i) => (
-              <div
-                key={col.value}
-                className={`rg-headcell${i === todayColIndex ? " rg-headcell--now" : ""}`}
-                style={{ gridRow: 2, gridColumn: gridColOf(i) }}
-              >
-                {col.label}
-                {i === todayColIndex && <span className="rg-headcell__today">Today</span>}
+              <div className="rg-headcell rg-headcell--focus" style={{ gridRow: "1 / 3", gridColumn: 2 }}>
+                {secondaryLabel}
               </div>
-            ))}
+              {rows.map((r, idx) => (
+                <SidebarRow key={r.key} row={r} gridRow={idx + 3} secondaryField={secondaryField} guard={guard} setEditing={setEditing} onHover={setHover} />
+              ))}
+            </div>
+          </div>
 
-            {rows.map((r, idx) => (
-              <GridRow
-                key={r.key}
-                row={r}
-                gridRow={idx + 3}
-                activeColumns={activeColumns}
-                secondaryField={secondaryField}
-                guard={guard}
-                setEditing={setEditing}
-              />
-            ))}
+          <div className="rg-hscroll lt-scroll" ref={hscrollRef} onScroll={onHscrollScroll}>
+            <div
+              className="rg-grid"
+              style={{
+                gridTemplateColumns: `repeat(${activeColumns.length}, minmax(76px, 1fr))`,
+                gridTemplateRows: rowsTemplate,
+              }}
+            >
+              {activeColumns.map((col, i) => (
+                <div
+                  key={`colbg-${col.value}`}
+                  className={`rg-colbg${i % 2 === 1 ? " rg-colbg--alt" : ""}${i === todayColIndex ? " rg-colbg--today" : ""}`}
+                  style={{ gridColumn: i + 1, gridRow: `1 / ${lastRowLine}` }}
+                />
+              ))}
+
+              {monthBands.map((band) => (
+                <div
+                  key={`band-${band.startIdx}`}
+                  className="rg-headcell rg-headcell--month"
+                  style={{ gridRow: 1, gridColumn: `${band.startIdx + 1} / ${band.endIdx + 2}` }}
+                >
+                  {band.label}
+                </div>
+              ))}
+              {activeColumns.map((col, i) => (
+                <div
+                  key={col.value}
+                  className={`rg-headcell${i === todayColIndex ? " rg-headcell--now" : ""}`}
+                  style={{ gridRow: 2, gridColumn: i + 1 }}
+                >
+                  {col.label}
+                </div>
+              ))}
+
+              {rows.map((r, idx) => (
+                <DateRow key={r.key} row={r} gridRow={idx + 3} activeColumns={activeColumns} guard={guard} setEditing={setEditing} />
+              ))}
+            </div>
           </div>
         </div>
       )}
@@ -315,58 +345,88 @@ export default function RoadmapGantt({ initiatives, focusAreas, teams, onUpsert,
           onDelete={remove}
         />
       )}
+
+      {hover &&
+        createPortal(
+          <div
+            className="rg-tooltip rg-tooltip--portal"
+            role="tooltip"
+            style={{ top: hover.rect.bottom + 6, left: hover.rect.left }}
+          >
+            <div className="rg-tooltip__title">{hover.item.title}</div>
+            <dl className="rg-tooltip__facts">
+              {initiativeFacts(hover.item).map((f) => (
+                <div className="rg-tooltip__fact" key={f.label}>
+                  <dt>{f.label}</dt>
+                  <dd>{f.value}</dd>
+                </div>
+              ))}
+            </dl>
+          </div>,
+          document.body
+        )}
     </>
   );
 }
 
-function GridRow({ row, gridRow, activeColumns, secondaryField, guard, setEditing }) {
+function SidebarRow({ row, gridRow, secondaryField, guard, setEditing, onHover }) {
   if (row.type === "group") {
     return (
       <div className="rg-teamband" style={{ gridRow, gridColumn: "1 / -1" }}>
-        <span className="rg-teamband__pin">
-          <span className="rg-teamband__name">{row.label}</span>
-          <span className="rg-teamband__count">{row.count}</span>
-        </span>
+        <span className="rg-teamband__name">{row.label}</span>
+        <span className="rg-teamband__count">{row.count}</span>
       </div>
     );
   }
 
   const item = row.item;
-  const idxs = occupiedIndices(item, activeColumns);
-  const startCol = gridColOf(Math.min(...idxs));
-  const endCol = gridColOf(Math.max(...idxs)) + 1;
   const onEdit = () => guard(() => setEditing({ initiative: item }))();
+  const showTooltip = (e) => onHover({ item, rect: e.currentTarget.getBoundingClientRect() });
+  const hideTooltip = () => onHover(null);
 
   return (
     <Fragment>
-      <button type="button" className="rg-labelcell" style={{ gridRow, gridColumn: 1 }} onClick={onEdit}>
+      <button
+        type="button"
+        className="rg-labelcell"
+        style={{ gridRow, gridColumn: 1 }}
+        onClick={onEdit}
+        onMouseEnter={showTooltip}
+        onMouseLeave={hideTooltip}
+        onFocus={showTooltip}
+        onBlur={hideTooltip}
+      >
         <span className="rg-labelcell__text">{item.title}</span>
-        <div className="rg-tooltip" role="tooltip">
-          <div className="rg-tooltip__title">{item.title}</div>
-          <dl className="rg-tooltip__facts">
-            {initiativeFacts(item).map((f) => (
-              <div className="rg-tooltip__fact" key={f.label}>
-                <dt>{f.label}</dt>
-                <dd>{f.value}</dd>
-              </div>
-            ))}
-          </dl>
-        </div>
       </button>
       <div className="rg-focuscell" style={{ gridRow, gridColumn: 2 }}>
         {item[secondaryField] || "—"}
       </div>
-      <div
-        className={`rg-bar rg-bar--${item.status}`}
-        style={{ gridRow, gridColumn: `${startCol} / ${endCol}` }}
-        onClick={onEdit}
-        role="button"
-        tabIndex={0}
-        onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && onEdit()}
-        title={item.title}
-      >
-        <span className="rg-bar__status">{STATUS_LABEL[item.status]}</span>
-      </div>
     </Fragment>
+  );
+}
+
+function DateRow({ row, gridRow, activeColumns, guard, setEditing }) {
+  if (row.type === "group") {
+    return <div className="rg-teamband rg-teamband--filler" style={{ gridRow, gridColumn: "1 / -1" }} />;
+  }
+
+  const item = row.item;
+  const idxs = occupiedIndices(item, activeColumns);
+  const startCol = Math.min(...idxs) + 1;
+  const endCol = Math.max(...idxs) + 2;
+  const onEdit = () => guard(() => setEditing({ initiative: item }))();
+
+  return (
+    <div
+      className={`rg-bar rg-bar--${item.status}`}
+      style={{ gridRow, gridColumn: `${startCol} / ${endCol}` }}
+      onClick={onEdit}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && onEdit()}
+      title={item.title}
+    >
+      <span className="rg-bar__status">{STATUS_LABEL[item.status]}</span>
+    </div>
   );
 }

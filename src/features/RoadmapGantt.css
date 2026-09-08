@@ -14,19 +14,51 @@
   flex: 0 0 auto;
 }
 
-.rg-scroll {
-  /* A bounded height is what makes this the actual scrolling container --
-     without it, this box only ever grows to fit its content and never
-     overflows, so it's the page that scrolls instead. `position: sticky`
-     anchors to the nearest scrolling ancestor, so with no real scrolling
-     happening here, the sticky header/label column would just scroll away
-     with the page on any vertical scroll. */
-  /* Sized to leave room for everything above it (hero, tabs, toolbar) so
-     the table's OWN bottom edge -- where its horizontal scrollbar lives --
-     is always within the initial viewport. Without this, that edge sits
-     below the fold and the page itself has to be scrolled just to reach
-     the horizontal scrollbar, which defeats having one. */
+/* ---- Two-panel layout ------------------------------------------------------
+   The Initiative/secondary-field columns are a separate, non-scrolling
+   panel next to the horizontally-scrolling date panel -- NOT a "sticky"
+   column inside one wide grid. position:sticky on a grid item stops
+   tracking correctly once scrolled roughly past its own track's width in a
+   very wide implicit grid (confirmed by direct measurement while building
+   this table: it held for the first ~1300px of horizontal scroll, then
+   silently started scrolling away with the content). Splitting into two
+   panels side by side, with their vertical scroll kept in sync via JS
+   (see RoadmapGantt.jsx), sidesteps that limitation entirely: the sidebar
+   simply never scrolls horizontally, so there's nothing for it to need to
+   stick against. */
+.rg-tablewrap {
+  display: flex;
   max-height: calc(100vh - 340px);
+  border: 1px solid var(--lt-color-border);
+  border-radius: var(--lt-radius-lg);
+  background: var(--lt-white);
+  box-shadow: var(--lt-shadow-sm);
+  overflow: hidden;
+}
+
+.rg-sidebar {
+  flex: 0 0 370px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  border-right: 1px solid var(--lt-color-border);
+  /* This panel's own scrollbar is redundant -- its scroll position mirrors
+     the date panel's, which already shows one. */
+  scrollbar-width: none;
+}
+.rg-sidebar::-webkit-scrollbar {
+  display: none;
+}
+
+.rg-sidebargrid {
+  display: grid;
+  grid-template-columns: 220px 150px;
+  align-items: stretch;
+  min-width: 100%;
+}
+
+.rg-hscroll {
+  flex: 1 1 auto;
+  min-width: 0; /* let this flex child actually shrink/scroll instead of overflowing the flex row */
   /* `scroll` (not `auto`) so both scrollbars are always rendered, even
      when a given axis doesn't currently overflow -- a constant affordance
      that this table scrolls, and no layout shift when it starts to.
@@ -34,19 +66,9 @@
      that otherwise use overlay (auto-hiding) scrollbars. */
   overflow: scroll;
   scrollbar-gutter: stable;
-  border: 1px solid var(--lt-color-border);
-  border-radius: var(--lt-radius-lg);
-  background: var(--lt-white);
-  box-shadow: var(--lt-shadow-sm);
-}
-
-/* A visible track (not just a thumb that appears on hover/drag) so the
-   scrollbar reads as a permanent fixture of this table, not the shared
-   .lt-scroll's default transparent-track thin style used elsewhere. */
-.rg-scroll {
   scrollbar-color: var(--lt-gray-300) var(--lt-gray);
 }
-.rg-scroll::-webkit-scrollbar-track {
+.rg-hscroll::-webkit-scrollbar-track {
   background: var(--lt-gray);
 }
 
@@ -59,7 +81,10 @@
 
 /* ---- Header: light, calm -- hierarchy comes from typography and the
    accent line under "today", not heavy color blocks. Two rows: month
-   super-header, then each month's Mondays underneath it. ---- */
+   super-header, then each month's Mondays underneath it. Shared between
+   the sidebar and the date panel, so both use the exact same explicit
+   HEAD_ROW_H (see RoadmapGantt.jsx) -- they're two independent grids that
+   need to line up pixel-for-pixel. ---- */
 .rg-headcell {
   position: sticky;
   top: 0;
@@ -72,17 +97,12 @@
   text-align: center;
   letter-spacing: 0.03em;
   border-bottom: 1px solid var(--lt-color-border);
-  /* Never wrap the date -- and `overflow: hidden` resets the grid item's
-     automatic content-based minimum size to 0, so a long label can never
-     force ITS column wider than the others sharing the same `minmax(...)`
-     track size. Without this, one wrapped/overflowing date would break
-     "every column is the same width". */
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 .rg-headcell--month {
-  padding: var(--lt-space-3) var(--lt-space-2) var(--lt-space-1);
+  padding: var(--lt-space-2) var(--lt-space-2) 2px;
   color: var(--lt-deep-blue);
   font-family: var(--lt-font-display);
   font-size: var(--lt-fs-sm);
@@ -92,32 +112,14 @@
 }
 .rg-headcell--label,
 .rg-headcell--focus {
-  left: 0;
-  z-index: 7;
   text-align: left;
   padding-left: var(--lt-space-4);
   color: var(--lt-deep-blue);
   text-transform: uppercase;
 }
-.rg-headcell--focus {
-  left: 220px;
-}
 .rg-headcell--now {
-  position: relative;
   color: var(--lt-green-darken-2);
   border-bottom: 2px solid var(--lt-green);
-}
-.rg-headcell__today {
-  display: block;
-  font-size: 10px;
-  font-weight: var(--lt-fw-black);
-  color: #fff;
-  background: var(--lt-green-darken-2);
-  border-radius: var(--lt-radius-pill);
-  padding: 1px 8px;
-  margin: 3px auto 0;
-  width: fit-content;
-  letter-spacing: 0.04em;
 }
 
 /* Column tints -- vertical striping instead of horizontal row zebra, so
@@ -136,25 +138,27 @@
 
 /* ---- Grouping: by team only (a team's initiatives can span several focus
    areas, so nesting under focus area would duplicate the team band --
-   focus area is its own column per row instead, see .rg-focuscell). ---- */
+   focus area is its own column per row instead, see .rg-focuscell).
+   Rendered as two elements (one per panel) that share a background color
+   so they read as one continuous band. ---- */
 .rg-teamband {
+  display: flex;
+  align-items: center;
+  gap: var(--lt-space-2);
+  padding: 0 var(--lt-space-4);
   background: var(--lt-blue-lighten-4);
   border-top: 1px solid var(--lt-color-border);
   border-bottom: 1px solid var(--lt-color-border);
-}
-.rg-teamband__pin {
-  position: sticky;
-  left: 0;
-  display: inline-flex;
-  align-items: center;
-  gap: var(--lt-space-2);
-  height: 100%;
-  padding: 0 var(--lt-space-4);
   font-size: var(--lt-fs-xs);
   font-weight: var(--lt-fw-black);
   text-transform: uppercase;
   letter-spacing: 0.07em;
   color: var(--lt-blue);
+}
+.rg-teamband--filler {
+  background: var(--lt-blue-lighten-4);
+  border-top: 1px solid var(--lt-color-border);
+  border-bottom: 1px solid var(--lt-color-border);
 }
 .rg-teamband__count {
   display: inline-grid;
@@ -163,7 +167,7 @@
   height: 18px;
   padding: 0 6px;
   border-radius: var(--lt-radius-pill);
-  background: var(--lt-gray);
+  background: var(--lt-white);
   border: 1px solid var(--lt-color-border);
   font-size: 10px;
   letter-spacing: normal;
@@ -174,13 +178,9 @@
 
 /* ---- Initiative rows ---------------------------------------------------- */
 .rg-labelcell {
-  position: sticky;
-  left: 0;
-  z-index: 3;
   display: flex;
   align-items: center;
   gap: var(--lt-space-2);
-  height: 100%;
   width: 100%;
   text-align: left;
   padding: 0 var(--lt-space-4);
@@ -197,10 +197,6 @@
 .rg-labelcell:focus-visible {
   background: var(--lt-blue-lighten-4);
   color: var(--lt-blue);
-  /* Without this, the tooltip's own z-index only orders it within this
-     button's stacking context -- later rows (same z-index: 3) would still
-     paint over it, since a child can never outrank its parent's level. */
-  z-index: 50;
 }
 .rg-labelcell__text {
   flex: 1;
@@ -210,19 +206,12 @@
   white-space: nowrap;
 }
 
-/* Focus Area column -- plain text instead of a color code, sticky right
-   next to the Initiative column so it stays visible while scrolling
-   through weeks. */
+/* Focus Area / Team column -- plain text instead of a color code. */
 .rg-focuscell {
-  position: sticky;
-  left: 220px;
-  z-index: 2;
   display: flex;
   align-items: center;
-  height: 100%;
   padding: 0 var(--lt-space-4);
   border-bottom: 1px solid var(--lt-color-border);
-  border-right: 1px solid var(--lt-color-border);
   background: var(--lt-white);
   color: var(--lt-text-secondary);
   font-size: var(--lt-fs-xs);
@@ -232,13 +221,19 @@
 }
 
 /* Rich hover card -- replaces the browser's native title tooltip with
-   Focus area / Summary / Current state / Future state, per row. Anchored to
-   the (sticky) label cell, which is itself a positioned containing block. */
-.rg-tooltip {
-  position: absolute;
-  top: calc(100% + 6px);
-  left: 0;
-  z-index: 30;
+   every field on the initiative. Rendered through a React portal into
+   document.body (see RoadmapGantt.jsx) rather than as a CSS-only
+   :hover-revealed absolutely-positioned child: that approach kept full
+   layout size even while `visibility: hidden` (only `display: none`
+   removes an element from layout), so every row's dormant ~70vh-tall
+   tooltip was inflating the scroll container's scrollable area by
+   hundreds of pixels of invisible, unreachable space -- the root cause of
+   a "phantom whitespace" bug found while building this table. Being in a
+   portal, this needs nothing from this component's own scroll/stacking
+   context; position is plain `fixed` + JS-computed coordinates. */
+.rg-tooltip--portal {
+  position: fixed;
+  z-index: 1000;
   width: 360px;
   max-width: min(360px, 90vw);
   max-height: 70vh;
@@ -249,21 +244,6 @@
   box-shadow: var(--lt-shadow-lg);
   padding: var(--lt-space-4);
   text-align: left;
-  visibility: hidden;
-  opacity: 0;
-  transform: translateY(-4px);
-  transition: opacity var(--lt-transition), transform var(--lt-transition), visibility var(--lt-transition);
-  pointer-events: none;
-}
-.rg-labelcell:hover .rg-tooltip,
-.rg-labelcell:focus-visible .rg-tooltip {
-  pointer-events: auto; /* long fact list scrolls -- let the mouse reach it */
-}
-.rg-labelcell:hover .rg-tooltip,
-.rg-labelcell:focus-visible .rg-tooltip {
-  visibility: visible;
-  opacity: 1;
-  transform: translateY(0);
 }
 .rg-tooltip__title {
   font-family: var(--lt-font-display);
