@@ -236,6 +236,99 @@ a.lt-badge:hover {
   padding-left: 42px;
 }
 
+/* ---- MultiSelect ----------------------------------------------------------
+   A button + checkbox panel, standing in for <Select> anywhere a filter
+   needs to support choosing several values at once. */
+.lt-multiselect {
+  position: relative;
+}
+.lt-multiselect__btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--lt-space-2);
+  font-family: var(--lt-font-body);
+  font-size: var(--lt-fs-sm);
+  color: var(--lt-text);
+  background-color: var(--lt-white);
+  border: 1px solid var(--lt-gray-light-2);
+  border-radius: var(--lt-radius-md);
+  padding: 12px 16px;
+  cursor: pointer;
+  text-align: left;
+}
+.lt-multiselect__btn:hover {
+  border-color: var(--lt-blue-lighten-2);
+}
+.lt-multiselect__label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.lt-multiselect__caret {
+  flex: 0 0 auto;
+  color: var(--lt-text-muted);
+  font-size: 10px;
+}
+.lt-multiselect__panel {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 40;
+  min-width: 220px;
+  max-height: 320px;
+  overflow-y: auto;
+  background: var(--lt-white);
+  border: 1px solid var(--lt-color-border);
+  border-radius: var(--lt-radius-md);
+  box-shadow: var(--lt-shadow-lg);
+  padding: var(--lt-space-2);
+}
+.lt-multiselect__actions {
+  display: flex;
+  gap: var(--lt-space-2);
+  padding: 4px 8px 8px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid var(--lt-color-border);
+}
+.lt-multiselect__actions button {
+  border: none;
+  background: none;
+  color: var(--lt-blue);
+  font-size: var(--lt-fs-xs);
+  font-weight: var(--lt-fw-bold);
+  cursor: pointer;
+  padding: 0;
+}
+.lt-multiselect__actions button:hover {
+  text-decoration: underline;
+}
+.lt-multiselect__option {
+  display: flex;
+  align-items: center;
+  gap: var(--lt-space-2);
+  padding: 6px 8px;
+  border-radius: var(--lt-radius-sm);
+  font-size: var(--lt-fs-sm);
+  color: var(--lt-text);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.lt-multiselect__option:hover {
+  background: var(--lt-gray);
+}
+.lt-multiselect__option input {
+  accent-color: var(--lt-blue);
+}
+.lt-multiselect__swatch {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex: 0 0 auto;
+}
+
 /* ---- Modal --------------------------------------------------------------- */
 .lt-modal__overlay {
   position: fixed;

@@ -18,6 +18,11 @@
   font-size: var(--lt-fs-xs);
   color: var(--lt-text-muted);
 }
+.rg-legend__sep {
+  width: 1px;
+  align-self: stretch;
+  background: var(--lt-color-border);
+}
 .rg-swatch {
   width: 10px;
   height: 10px;
@@ -43,8 +48,7 @@
 }
 
 .rg-grid {
-  display: grid;
-  grid-template-columns: 230px repeat(13, minmax(64px, 1fr));
+  display: grid; /* grid-template-columns/-rows set inline -- column count is dynamic */
   align-items: stretch;
   min-width: 1080px;
   position: relative;
@@ -106,33 +110,14 @@
   box-shadow: inset 2px 0 0 var(--lt-green), inset -2px 0 0 var(--lt-green);
 }
 
-/* ---- Grouping: typographic hierarchy instead of heavy color blocks --
-   Focus area = bold serif + colored left rule; Team = smaller, muted,
-   uppercase. Both stay light so they never compete visually with the
+/* ---- Grouping: by team only (a team's initiatives can span several focus
+   areas, so nesting under focus area would duplicate the team band -- focus
+   area is color-coded per row instead, see .rg-labelcell__dot). Bold,
+   uppercase, but still light -- it should never compete visually with the
    bars, which is where the eye should land. ---- */
-.rg-groupband {
-  background: var(--lt-white);
-  border-top: 1px solid var(--lt-color-border);
-  border-bottom: 1px solid var(--lt-color-border);
-}
-.rg-groupband__pin {
-  position: sticky;
-  left: 0;
-  display: flex;
-  align-items: center;
-  height: 100%;
-  padding: 0 var(--lt-space-4);
-  border-left: 4px solid var(--lt-blue);
-  font-family: var(--lt-font-display);
-  font-size: var(--lt-fs-base);
-  color: var(--lt-deep-blue);
-  background: var(--lt-blue-lighten-4);
-  width: 100%;
-  box-sizing: border-box;
-}
-
 .rg-teamband {
-  background: var(--lt-white);
+  background: var(--lt-blue-lighten-4);
+  border-top: 1px solid var(--lt-color-border);
   border-bottom: 1px solid var(--lt-color-border);
 }
 .rg-teamband__pin {
@@ -142,12 +127,12 @@
   align-items: center;
   gap: var(--lt-space-2);
   height: 100%;
-  padding: 0 var(--lt-space-4) 0 calc(var(--lt-space-4) + 4px);
+  padding: 0 var(--lt-space-4);
   font-size: var(--lt-fs-xs);
   font-weight: var(--lt-fw-black);
   text-transform: uppercase;
   letter-spacing: 0.07em;
-  color: var(--lt-text-muted);
+  color: var(--lt-blue);
 }
 .rg-teamband__count {
   display: inline-grid;
@@ -172,10 +157,11 @@
   z-index: 3;
   display: flex;
   align-items: center;
+  gap: var(--lt-space-2);
   height: 100%;
   width: 100%;
   text-align: left;
-  padding: 0 var(--lt-space-4) 0 calc(var(--lt-space-4) + 4px);
+  padding: 0 var(--lt-space-4);
   border: none;
   border-bottom: 1px solid var(--lt-color-border);
   background: var(--lt-white);
@@ -184,6 +170,12 @@
   font-size: var(--lt-fs-sm);
   font-weight: var(--lt-fw-bold);
   cursor: pointer;
+}
+.rg-labelcell__dot {
+  flex: 0 0 auto;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
 }
 .rg-labelcell:hover,
 .rg-labelcell:focus-visible {
