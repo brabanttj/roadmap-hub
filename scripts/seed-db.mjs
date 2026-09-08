@@ -28,8 +28,8 @@ try {
     await client.query(
       `INSERT INTO initiatives (
          focus_area, team, title, summary, current_state, future_state, success_metrics,
-         impacted_teams, status, completed, year, start_month, end_month, submitted_by, sort_order
-       ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)`,
+         impacted_teams, status, completed, start_date, end_date, submitted_by, sort_order
+       ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)`,
       [
         n.focusArea,
         n.team,
@@ -41,9 +41,8 @@ try {
         n.impactedTeams,
         n.status,
         n.status === "completed",
-        n.year,
-        n.startMonth,
-        n.endMonth,
+        n.startDate,
+        n.endDate,
         "seed",
         i,
       ]

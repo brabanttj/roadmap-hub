@@ -1,9 +1,10 @@
-﻿/**
+/**
  * v1 seed data, transcribed directly from the roadmap screenshot that
  * kicked off this project (no source workbook was available to import).
  * Edit through the app from here on -- re-running `npm run db:seed` resets
  * to this baseline.
  */
+import { mondaysInMonth } from "../src/lib/text.js";
 
 export const FOCUS_AREAS = [
   "Core Platform",
@@ -33,6 +34,17 @@ export const TEAMS = [
 
 const YEAR = 2026;
 
+// start/end dates are always a Monday (the Gantt schedules at week
+// granularity) -- these helpers pick the first Monday of `startMonth` and
+// the last Monday of `endMonth`, so the seeded bars span the same whole
+// months the original screenshot showed.
+const iso = (d) => d.toISOString().slice(0, 10);
+const firstMondayOf = (month) => iso(mondaysInMonth(YEAR, month)[0]);
+const lastMondayOf = (month) => {
+  const weeks = mondaysInMonth(YEAR, month);
+  return iso(weeks[weeks.length - 1]);
+};
+
 export const INITIATIVES = [
   {
     focusArea: "Core Platform",
@@ -44,9 +56,8 @@ export const INITIATIVES = [
     successMetrics: "Increase activation rate and time-to-value; decrease setup abandonment.",
     impactedTeams: ["Sales", "Support"],
     status: "completed",
-    year: YEAR,
-    startMonth: 7,
-    endMonth: 7,
+    startDate: firstMondayOf(7),
+    endDate: firstMondayOf(7),
   },
   {
     focusArea: "Data",
@@ -58,9 +69,8 @@ export const INITIATIVES = [
     successMetrics: "Increase campaign relevance and qualified pipeline.",
     impactedTeams: ["Marketing", "Data Science"],
     status: "in_development",
-    year: YEAR,
-    startMonth: 8,
-    endMonth: 9,
+    startDate: firstMondayOf(8),
+    endDate: lastMondayOf(9),
   },
   {
     focusArea: "Platform",
@@ -72,9 +82,8 @@ export const INITIATIVES = [
     successMetrics: "Maintain 99.95% availability; decrease incident recovery time.",
     impactedTeams: ["All Product Teams"],
     status: "in_development",
-    year: YEAR,
-    startMonth: 8,
-    endMonth: 8,
+    startDate: firstMondayOf(8),
+    endDate: lastMondayOf(8),
   },
   {
     focusArea: "Experience",
@@ -86,9 +95,8 @@ export const INITIATIVES = [
     successMetrics: "Increase self-service resolution; decrease billing contacts.",
     impactedTeams: ["Finance", "Support"],
     status: "completed",
-    year: YEAR,
-    startMonth: 8,
-    endMonth: 8,
+    startDate: firstMondayOf(8),
+    endDate: lastMondayOf(8),
   },
   {
     focusArea: "Data",
@@ -100,9 +108,8 @@ export const INITIATIVES = [
     successMetrics: "Increase insight adoption; maintain answer quality and data controls.",
     impactedTeams: ["Analytics", "Customer Success"],
     status: "backlog",
-    year: YEAR,
-    startMonth: null,
-    endMonth: null,
+    startDate: null,
+    endDate: null,
   },
   {
     focusArea: "Platform",
@@ -114,9 +121,8 @@ export const INITIATIVES = [
     successMetrics: "Decrease deployment lead time and rollback frequency.",
     impactedTeams: ["Engineering", "QA"],
     status: "backlog",
-    year: YEAR,
-    startMonth: null,
-    endMonth: null,
+    startDate: null,
+    endDate: null,
   },
   {
     focusArea: "Partnerships",
@@ -128,9 +134,8 @@ export const INITIATIVES = [
     successMetrics: "Increase partner-sourced pipeline and integration adoption.",
     impactedTeams: ["Partnerships", "Sales"],
     status: "backlog",
-    year: YEAR,
-    startMonth: null,
-    endMonth: null,
+    startDate: null,
+    endDate: null,
   },
   {
     focusArea: "Experience",
@@ -142,9 +147,8 @@ export const INITIATIVES = [
     successMetrics: "Increase mobile task completion and weekly active users.",
     impactedTeams: ["Design", "Support"],
     status: "in_development",
-    year: YEAR,
-    startMonth: 7,
-    endMonth: 8,
+    startDate: firstMondayOf(7),
+    endDate: lastMondayOf(8),
   },
   {
     focusArea: "Platform",
@@ -156,9 +160,8 @@ export const INITIATIVES = [
     successMetrics: "Increase access governance; decrease privileged-access risk.",
     impactedTeams: ["IT", "Compliance"],
     status: "completed",
-    year: YEAR,
-    startMonth: 7,
-    endMonth: 8,
+    startDate: firstMondayOf(7),
+    endDate: lastMondayOf(8),
   },
   {
     focusArea: "Data",
@@ -170,9 +173,8 @@ export const INITIATIVES = [
     successMetrics: "Increase trusted-report usage; decrease metric discrepancies.",
     impactedTeams: ["Finance", "Analytics"],
     status: "in_development",
-    year: YEAR,
-    startMonth: 7,
-    endMonth: 9,
+    startDate: firstMondayOf(7),
+    endDate: lastMondayOf(9),
   },
   {
     focusArea: "Core Platform",
@@ -184,9 +186,8 @@ export const INITIATIVES = [
     successMetrics: "Increase expansion revenue and packaging conversion.",
     impactedTeams: ["Finance", "Sales Operations"],
     status: "completed",
-    year: YEAR,
-    startMonth: 7,
-    endMonth: 7,
+    startDate: firstMondayOf(7),
+    endDate: firstMondayOf(7),
   },
   {
     focusArea: "Operations",
@@ -198,9 +199,8 @@ export const INITIATIVES = [
     successMetrics: "Decrease first-response time and manual triage effort.",
     impactedTeams: ["Support", "Customer Success"],
     status: "in_development",
-    year: YEAR,
-    startMonth: 7,
-    endMonth: 12,
+    startDate: firstMondayOf(7),
+    endDate: lastMondayOf(12),
   },
   {
     focusArea: "Platform",
@@ -212,9 +212,8 @@ export const INITIATIVES = [
     successMetrics: "Increase agent delivery speed; maintain security and observability.",
     impactedTeams: ["Engineering", "Security"],
     status: "in_development",
-    year: YEAR,
-    startMonth: 9,
-    endMonth: 11,
+    startDate: firstMondayOf(9),
+    endDate: lastMondayOf(11),
   },
   {
     focusArea: "Experience",
@@ -226,9 +225,8 @@ export const INITIATIVES = [
     successMetrics: "Increase retention and expansion signal coverage.",
     impactedTeams: ["Customer Success", "Sales"],
     status: "completed",
-    year: YEAR,
-    startMonth: 7,
-    endMonth: 7,
+    startDate: firstMondayOf(7),
+    endDate: firstMondayOf(7),
   },
   {
     focusArea: "Platform",
@@ -240,9 +238,8 @@ export const INITIATIVES = [
     successMetrics: "Decrease unit cost; increase tagged-spend coverage.",
     impactedTeams: ["Finance", "Engineering"],
     status: "in_development",
-    year: YEAR,
-    startMonth: 9,
-    endMonth: 12,
+    startDate: firstMondayOf(9),
+    endDate: lastMondayOf(12),
   },
   {
     focusArea: "Data",
@@ -254,9 +251,8 @@ export const INITIATIVES = [
     successMetrics: "Increase event completeness and data latency performance.",
     impactedTeams: ["Analytics", "Integrations"],
     status: "completed",
-    year: YEAR,
-    startMonth: 7,
-    endMonth: 7,
+    startDate: firstMondayOf(7),
+    endDate: firstMondayOf(7),
   },
   {
     focusArea: "Partnerships",
@@ -268,9 +264,8 @@ export const INITIATIVES = [
     successMetrics: "Increase enterprise readiness and sales-cycle velocity.",
     impactedTeams: ["IT", "Sales Engineering"],
     status: "in_development",
-    year: YEAR,
-    startMonth: 9,
-    endMonth: 10,
+    startDate: firstMondayOf(9),
+    endDate: lastMondayOf(10),
   },
   {
     focusArea: "Operations",
@@ -282,8 +277,7 @@ export const INITIATIVES = [
     successMetrics: "Decrease time-to-resolution and content maintenance effort.",
     impactedTeams: ["Support", "Enablement"],
     status: "backlog",
-    year: YEAR,
-    startMonth: null,
-    endMonth: null,
+    startDate: null,
+    endDate: null,
   },
 ];

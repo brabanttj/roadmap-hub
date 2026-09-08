@@ -1,10 +1,22 @@
 import { useState } from "react";
 import { Modal, Input, Select, Button } from "../components/ui/index.js";
-import { MONTH_NAMES, STATUS_LABEL } from "../lib/text.js";
+import { MONTH_NAMES, STATUS_LABEL, mondaysInMonth, formatWeekLabel } from "../lib/text.js";
 import "./InitiativeModal.css";
 
 const FRIENDLY_ERROR = "Something went wrong. Please try again.";
 const STATUS_OPTIONS = ["backlog", "in_development", "completed"];
+const REFERENCE_YEAR = new Date().getFullYear();
+
+// Every Monday of the reference year, grouped by month -- the same week
+// list the Gantt view itself renders, so scheduling here always lines up
+// with a real column on the roadmap.
+const WEEKS_BY_MONTH = MONTH_NAMES.map((name, idx) => ({
+  name,
+  weeks: mondaysInMonth(REFERENCE_YEAR, idx + 1).map((d) => ({
+    value: d.toISOString().slice(0, 10),
+    label: formatWeekLabel(d),
+  })),
+}));
 
 function toFormState(initiative) {
   return {
@@ -19,9 +31,8 @@ function toFormState(initiative) {
     status: initiative?.status && initiative.status !== "idea" && initiative.status !== "rejected"
       ? initiative.status
       : "backlog",
-    year: initiative?.year ?? new Date().getUTCFullYear(),
-    startMonth: initiative?.startMonth ?? "",
-    endMonth: initiative?.endMonth ?? "",
+    startDate: initiative?.startDate || "",
+    endDate: initiative?.endDate || "",
   };
 }
 
@@ -56,9 +67,8 @@ export default function InitiativeModal({ initiative, focusAreas, teams, onClose
             .filter(Boolean),
           status: form.status,
           completed: form.status === "completed",
-          year: form.year ? Number(form.year) : null,
-          startMonth: form.startMonth === "" ? null : Number(form.startMonth),
-          endMonth: form.endMonth === "" ? null : Number(form.endMonth),
+          startDate: form.startDate || null,
+          endDate: form.endDate || null,
         },
         initiative?.id
       );
@@ -160,21 +170,28 @@ export default function InitiativeModal({ initiative, focusAreas, teams, onClose
                 </option>
               ))}
             </Select>
-            <Input label="Year" type="number" value={form.year} onChange={upd("year")} />
-            <Select label="Start month" value={form.startMonth} onChange={upd("startMonth")}>
+            <Select label="Start week" value={form.startDate} onChange={upd("startDate")}>
               <option value="">Unscheduled</option>
-              {MONTH_NAMES.map((m, idx) => (
-                <option key={m} value={idx + 1}>
-                  {m}
-                </option>
+              {WEEKS_BY_MONTH.map((m) => (
+                <optgroup key={m.name} label={m.name}>
+                  {m.weeks.map((w) => (
+                    <option key={w.value} value={w.value}>
+                      {w.label}
+                    </option>
+                  ))}
+                </optgroup>
               ))}
             </Select>
-            <Select label="End month" value={form.endMonth} onChange={upd("endMonth")}>
+            <Select label="End week" value={form.endDate} onChange={upd("endDate")}>
               <option value="">Unscheduled</option>
-              {MONTH_NAMES.map((m, idx) => (
-                <option key={m} value={idx + 1}>
-                  {m}
-                </option>
+              {WEEKS_BY_MONTH.map((m) => (
+                <optgroup key={m.name} label={m.name}>
+                  {m.weeks.map((w) => (
+                    <option key={w.value} value={w.value}>
+                      {w.label}
+                    </option>
+                  ))}
+                </optgroup>
               ))}
             </Select>
           </div>

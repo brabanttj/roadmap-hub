@@ -26,11 +26,11 @@ const BODY_ROW_H = 44;
 // Every field on an initiative, for the hover card -- so a reviewer never
 // has to open the edit modal just to read something.
 function initiativeFacts(item) {
-  const schedule =
-    item.startMonth != null && item.endMonth != null
-      ? `${MONTH_NAMES[item.startMonth - 1]}–${MONTH_NAMES[item.endMonth - 1]}${item.year ? " " + item.year : ""}`
-      : "Unscheduled (Backlog)";
   const fmtDate = (v) => (v ? new Date(v).toLocaleDateString() : "—");
+  const schedule =
+    item.startDate && item.endDate
+      ? `Week of ${fmtDate(item.startDate)} – week of ${fmtDate(item.endDate)}`
+      : "Unscheduled (Backlog)";
   return [
     { label: "Team", value: item.team || "—" },
     { label: "Focus area", value: item.focusArea || "—" },
@@ -52,14 +52,22 @@ function initiativeFacts(item) {
 
 // Which columns (by index into `activeColumns`) a scheduled/unscheduled
 // initiative occupies, independent of which columns are currently shown.
+// A "week" column is occupied if the initiative's [startDate, endDate]
+// range (both Mondays) overlaps that week's Monday-to-Sunday span.
 function occupiedIndices(item, activeColumns) {
-  if (item.startMonth == null || item.endMonth == null) {
+  if (!item.startDate || !item.endDate) {
     const idx = activeColumns.findIndex((c) => c.type === "backlog");
     return idx === -1 ? [] : [idx];
   }
+  const start = new Date(item.startDate);
+  const end = new Date(item.endDate);
   const out = [];
   activeColumns.forEach((c, i) => {
-    if (c.type === "week" && c.month >= item.startMonth && c.month <= item.endMonth) out.push(i);
+    if (c.type !== "week") return;
+    const monday = new Date(c.value);
+    const sunday = new Date(monday);
+    sunday.setDate(monday.getDate() + 6);
+    if (start <= sunday && end >= monday) out.push(i);
   });
   return out;
 }

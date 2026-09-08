@@ -11,15 +11,24 @@ const INITIATIVE_COLUMNS = `
   id, focus_area AS "focusArea", team, title, summary,
   current_state AS "currentState", future_state AS "futureState",
   success_metrics AS "successMetrics", impacted_teams AS "impactedTeams",
-  status, completed, year, start_month AS "startMonth", end_month AS "endMonth",
+  status, completed,
+  to_char(start_date, 'YYYY-MM-DD') AS "startDate",
+  to_char(end_date, 'YYYY-MM-DD') AS "endDate",
   submitted_by AS "submittedBy", submitted_at AS "submittedAt",
   reviewed_by AS "reviewedBy", reviewed_at AS "reviewedAt",
   reviewer_notes AS "reviewerNotes", sort_order AS "sortOrder"
 `;
 
-function toMonth(v) {
-  const n = Number(v);
-  return Number.isInteger(n) && n >= 1 && n <= 12 ? n : null;
+// Both start/end are always a Monday (the first day of that week), picked
+// from the same week list the Gantt view renders -- see lib/text.js
+// mondaysInMonth on the client. Anything else is rejected rather than
+// silently coerced, since a non-Monday date would misalign with the grid.
+function toWeekStartOrNull(v) {
+  if (!v) return null;
+  const s = String(v).trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return null;
+  const d = new Date(`${s}T00:00:00Z`);
+  return Number.isNaN(d.getTime()) || d.getUTCDay() !== 1 ? null : s;
 }
 
 // ---- GET /api/bootstrap ----------------------------------------------------
@@ -131,8 +140,8 @@ router.post("/initiatives", async (req, res) => {
     const { rows } = await pool.query(
       `INSERT INTO initiatives (
          focus_area, team, title, summary, current_state, future_state, success_metrics,
-         impacted_teams, status, completed, year, start_month, end_month, submitted_by, sort_order
-       ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,
+         impacted_teams, status, completed, start_date, end_date, submitted_by, sort_order
+       ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,
          (SELECT COALESCE(MAX(sort_order), 0) + 1 FROM initiatives))
        RETURNING ${INITIATIVE_COLUMNS}`,
       [
@@ -146,9 +155,8 @@ router.post("/initiatives", async (req, res) => {
         Array.isArray(b.impactedTeams) ? b.impactedTeams.map((t) => String(t).trim()).filter(Boolean) : [],
         status,
         status === "completed",
-        b.year != null ? Number(b.year) : null,
-        toMonth(b.startMonth),
-        toMonth(b.endMonth),
+        toWeekStartOrNull(b.startDate),
+        toWeekStartOrNull(b.endDate),
         String(b.submittedBy || "").trim() || "reviewer",
       ]
     );
@@ -185,10 +193,9 @@ router.put("/initiatives/:id", async (req, res) => {
          impacted_teams  = $8,
          status          = $9,
          completed       = $10,
-         year            = $11,
-         start_month     = $12,
-         end_month       = $13
-       WHERE id = $14
+         start_date      = $11,
+         end_date        = $12
+       WHERE id = $13
        RETURNING ${INITIATIVE_COLUMNS}`,
       [
         String(b.focusArea || "").trim(),
@@ -201,9 +208,8 @@ router.put("/initiatives/:id", async (req, res) => {
         Array.isArray(b.impactedTeams) ? b.impactedTeams.map((t) => String(t).trim()).filter(Boolean) : [],
         status || "idea",
         status === "completed" || Boolean(b.completed),
-        b.year != null ? Number(b.year) : null,
-        toMonth(b.startMonth),
-        toMonth(b.endMonth),
+        toWeekStartOrNull(b.startDate),
+        toWeekStartOrNull(b.endDate),
         id,
       ]
     );

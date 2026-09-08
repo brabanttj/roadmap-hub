@@ -26,9 +26,10 @@ CREATE UNIQUE INDEX IF NOT EXISTS teams_name_ci_idx ON teams (lower(name));
 --   idea -> backlog -> planned -> in_progress -> completed
 --                 \-> rejected
 --
--- start_month/end_month (1-12, nullable) place the item on the Gantt-style
--- roadmap; null means "unscheduled" (shows in the Backlog column). One
--- range per initiative -- no separate design/build sub-phases in v1.
+-- start_date/end_date (nullable, always a Monday -- the first day of that
+-- week) place the item on the Gantt-style roadmap at week granularity;
+-- null means "unscheduled" (shows in the Backlog column). One range per
+-- initiative -- no separate design/build sub-phases in v1.
 -- ---------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS initiatives (
   id               SERIAL PRIMARY KEY,
@@ -43,9 +44,8 @@ CREATE TABLE IF NOT EXISTS initiatives (
   status           TEXT NOT NULL DEFAULT 'idea'
                      CHECK (status IN ('idea', 'backlog', 'in_development', 'completed', 'rejected')),
   completed        BOOLEAN NOT NULL DEFAULT FALSE,
-  year             INT,
-  start_month      INT CHECK (start_month BETWEEN 1 AND 12),
-  end_month        INT CHECK (end_month BETWEEN 1 AND 12),
+  start_date       DATE,
+  end_date         DATE,
   submitted_by     TEXT NOT NULL DEFAULT '',
   submitted_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
   reviewed_by      TEXT NOT NULL DEFAULT '',
