@@ -21,11 +21,24 @@ function weeksByMonth(year) {
   }));
 }
 
-function toFormState(initiative) {
+// This Monday, as an ISO date -- the sensible default start/end week for a
+// brand-new initiative, since every field is required here and "leave it
+// blank" isn't an option (see the Start/End week <Select>s below, which
+// have no blank/"Unscheduled" option to match).
+function currentWeekMonday() {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  const day = d.getDay();
+  d.setDate(d.getDate() + (day === 0 ? -6 : 1 - day));
+  return d.toISOString().slice(0, 10);
+}
+
+function toFormState(initiative, focusAreas, teams) {
+  const thisWeek = currentWeekMonday();
   return {
     title: initiative?.title || "",
-    focusArea: initiative?.focusArea || "",
-    team: initiative?.team || "",
+    focusArea: initiative?.focusArea || focusAreas[0]?.name || "",
+    team: initiative?.team || teams[0]?.name || "",
     summary: initiative?.summary || "",
     currentState: initiative?.currentState || "",
     futureState: initiative?.futureState || "",
@@ -36,20 +49,30 @@ function toFormState(initiative) {
       : "backlog",
     startYear: initiative?.startDate ? Number(initiative.startDate.slice(0, 4)) : REFERENCE_YEAR,
     endYear: initiative?.endDate ? Number(initiative.endDate.slice(0, 4)) : REFERENCE_YEAR,
-    startDate: initiative?.startDate || "",
-    endDate: initiative?.endDate || "",
+    startDate: initiative?.startDate || thisWeek,
+    endDate: initiative?.endDate || thisWeek,
   };
 }
 
 export default function InitiativeModal({ initiative, focusAreas, teams, onClose, onSave, onDelete }) {
-  const [form, setForm] = useState(() => toFormState(initiative));
+  const [form, setForm] = useState(() => toFormState(initiative, focusAreas, teams));
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [error, setError] = useState("");
 
   const upd = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
-  const valid = form.title.trim();
+  const valid =
+    form.title.trim() &&
+    form.focusArea &&
+    form.team &&
+    form.summary.trim() &&
+    form.currentState.trim() &&
+    form.futureState.trim() &&
+    form.successMetrics.trim() &&
+    form.impactedTeams.trim() &&
+    form.startDate &&
+    form.endDate;
   const startWeeks = weeksByMonth(form.startYear);
   const endWeeks = weeksByMonth(form.endYear);
   const yearOptionsFor = (year) => (YEAR_OPTIONS.includes(year) ? YEAR_OPTIONS : [...YEAR_OPTIONS, year].sort());
@@ -137,16 +160,14 @@ export default function InitiativeModal({ initiative, focusAreas, teams, onClose
           <Input label="Title *" value={form.title} onChange={upd("title")} required autoFocus />
 
           <div className="im-form__row">
-            <Select label="Focus area" value={form.focusArea} onChange={upd("focusArea")}>
-              <option value="">—</option>
+            <Select label="Focus area *" value={form.focusArea} onChange={upd("focusArea")} required>
               {focusAreas.map((f) => (
                 <option key={f.id} value={f.name}>
                   {f.name}
                 </option>
               ))}
             </Select>
-            <Select label="Team" value={form.team} onChange={upd("team")}>
-              <option value="">—</option>
+            <Select label="Team *" value={form.team} onChange={upd("team")} required>
               {teams.map((t) => (
                 <option key={t.id} value={t.name}>
                   {t.name}
@@ -156,29 +177,30 @@ export default function InitiativeModal({ initiative, focusAreas, teams, onClose
           </div>
 
           <label className="lt-field">
-            <span className="lt-field__label">Summary</span>
-            <textarea className="lt-input" rows={2} value={form.summary} onChange={upd("summary")} />
+            <span className="lt-field__label">Summary *</span>
+            <textarea className="lt-input" rows={2} value={form.summary} onChange={upd("summary")} required />
           </label>
           <label className="lt-field">
-            <span className="lt-field__label">Current state</span>
-            <textarea className="lt-input" rows={2} value={form.currentState} onChange={upd("currentState")} />
+            <span className="lt-field__label">Current state *</span>
+            <textarea className="lt-input" rows={2} value={form.currentState} onChange={upd("currentState")} required />
           </label>
           <label className="lt-field">
-            <span className="lt-field__label">Future state</span>
-            <textarea className="lt-input" rows={2} value={form.futureState} onChange={upd("futureState")} />
+            <span className="lt-field__label">Future state *</span>
+            <textarea className="lt-input" rows={2} value={form.futureState} onChange={upd("futureState")} required />
           </label>
           <label className="lt-field">
-            <span className="lt-field__label">Success metrics</span>
-            <textarea className="lt-input" rows={2} value={form.successMetrics} onChange={upd("successMetrics")} />
+            <span className="lt-field__label">Success metrics *</span>
+            <textarea className="lt-input" rows={2} value={form.successMetrics} onChange={upd("successMetrics")} required />
           </label>
           <Input
-            label="Impacted teams (comma-separated)"
+            label="Impacted teams (comma-separated) *"
             value={form.impactedTeams}
             onChange={upd("impactedTeams")}
             placeholder="e.g. Sales, Support"
+            required
           />
 
-          <Select label="Status" value={form.status} onChange={upd("status")}>
+          <Select label="Status *" value={form.status} onChange={upd("status")}>
             {STATUS_OPTIONS.map((s) => (
               <option key={s} value={s}>
                 {STATUS_LABEL[s]}
@@ -194,8 +216,7 @@ export default function InitiativeModal({ initiative, focusAreas, teams, onClose
                 </option>
               ))}
             </Select>
-            <Select label="Start week" value={form.startDate} onChange={upd("startDate")}>
-              <option value="">Unscheduled</option>
+            <Select label="Start week *" value={form.startDate} onChange={upd("startDate")} required>
               {startWeeks.map((m) => (
                 <optgroup key={m.name} label={m.name}>
                   {m.weeks.map((w) => (
@@ -215,8 +236,7 @@ export default function InitiativeModal({ initiative, focusAreas, teams, onClose
                 </option>
               ))}
             </Select>
-            <Select label="End week" value={form.endDate} onChange={upd("endDate")}>
-              <option value="">Unscheduled</option>
+            <Select label="End week *" value={form.endDate} onChange={upd("endDate")} required>
               {endWeeks.map((m) => (
                 <optgroup key={m.name} label={m.name}>
                   {m.weeks.map((w) => (
