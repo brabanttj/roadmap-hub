@@ -1,44 +1,37 @@
 import { Fragment, useMemo, useState } from "react";
 import { Card, Input, MultiSelect, Button, IllustrationBadge } from "../components/ui/index.js";
 import { usePasswordGate } from "../lib/PasswordGate.jsx";
-import { MONTH_NAMES, STATUS_LABEL } from "../lib/text.js";
+import { MONTH_NAMES, STATUS_LABEL, mondaysInMonth, formatWeekLabel } from "../lib/text.js";
 import InitiativeModal from "./InitiativeModal.jsx";
 import "./RoadmapGantt.css";
 
 // Excluded from the Gantt entirely -- ideas haven't been reviewed yet, and
 // rejected ideas never became roadmap work (see the Rejected tab for those).
 const VISIBLE_STATUSES = new Set(["backlog", "in_development", "completed"]);
-const CURRENT_MONTH = new Date().getMonth() + 1;
-const BAR_ICON = { completed: "✓", in_development: "●", backlog: "○" };
+const REFERENCE_YEAR = new Date().getFullYear();
+const TODAY = new Date();
+TODAY.setHours(0, 0, 0, 0);
 
 const MONTH_OPTIONS = MONTH_NAMES.map((m, idx) => ({ value: String(idx + 1), label: m }));
 const COLUMN_OPTIONS = [{ value: "backlog", label: "Backlog" }, ...MONTH_OPTIONS];
 
-// Distinct, cycling palette for focus areas -- these are user-editable
-// (see ManageTaxonomy), so colors are assigned by taxonomy order rather
-// than hardcoded per name.
-const FOCUS_COLORS = [
-  "#0069ba", // blue
-  "#078181", // teal
-  "#7c3aed", // violet
-  "#c2650a", // amber
-  "#b3306b", // magenta
-  "#4b5563", // slate
-  "#046a41", // deep green
-  "#ae2b41", // deep red
-];
-function focusAreaColor(name, order) {
-  if (!name) return "#9ca3af";
-  const idx = order.indexOf(name);
-  return FOCUS_COLORS[(idx === -1 ? name.length : idx) % FOCUS_COLORS.length];
-}
+// The two fixed left columns (Initiative, Focus area) before the
+// week/backlog columns start. Grid columns are 1-indexed, so a data column
+// at array index i sits at grid column i + 3.
+const FIXED_COLS = 2;
+const gridColOf = (i) => i + FIXED_COLS + 1;
 
-// Which column keys ("1".."12" or "backlog") a scheduled/unscheduled
+// Which columns (by index into `activeColumns`) a scheduled/unscheduled
 // initiative occupies, independent of which columns are currently shown.
-function occupiedColumns(item) {
-  if (item.startMonth == null || item.endMonth == null) return ["backlog"];
+function occupiedIndices(item, activeColumns) {
+  if (item.startMonth == null || item.endMonth == null) {
+    const idx = activeColumns.findIndex((c) => c.type === "backlog");
+    return idx === -1 ? [] : [idx];
+  }
   const out = [];
-  for (let m = item.startMonth; m <= item.endMonth; m++) out.push(String(m));
+  activeColumns.forEach((c, i) => {
+    if (c.type === "week" && c.month >= item.startMonth && c.month <= item.endMonth) out.push(i);
+  });
   return out;
 }
 
@@ -47,32 +40,61 @@ export default function RoadmapGantt({ initiatives, focusAreas, teams, onUpsert,
   const [search, setSearch] = useState("");
   const [focusAreaFilter, setFocusAreaFilter] = useState([]); // [] = all
   const [teamFilter, setTeamFilter] = useState([]); // [] = all
-  const [columnFilter, setColumnFilter] = useState([]); // [] = all columns shown
+  const [columnFilter, setColumnFilter] = useState([]); // [] = all months + backlog
   const [editing, setEditing] = useState(null); // { initiative } | { isNew: true } | null
 
-  const focusAreaOrder = focusAreas.map((f) => f.name);
   const teamOrder = teams.map((t) => t.name);
   const rank = (list, value) => {
     const idx = list.indexOf(value);
     return idx === -1 ? Infinity : idx;
   };
 
-  // Columns actually rendered: months in calendar order, Backlog forced
-  // last whenever it's part of the selection (or the default/unfiltered
-  // "everything" view) -- never wherever the user happened to click it.
+  // Columns actually rendered: each selected month broken down into its
+  // Mondays, in calendar order; Backlog forced last whenever it's part of
+  // the selection (or the default/unfiltered "everything" view) -- never
+  // wherever the user happened to click it.
   const activeColumns = useMemo(() => {
     const chosen = columnFilter.length === 0 ? COLUMN_OPTIONS.map((o) => o.value) : columnFilter;
     const months = chosen
       .filter((v) => v !== "backlog")
       .map(Number)
       .sort((a, b) => a - b);
-    const cols = months.map((m) => ({ type: "month", value: String(m), label: MONTH_NAMES[m - 1] }));
+    const cols = [];
+    for (const m of months) {
+      for (const monday of mondaysInMonth(REFERENCE_YEAR, m)) {
+        cols.push({ type: "week", month: m, value: monday.toISOString().slice(0, 10), label: formatWeekLabel(monday) });
+      }
+    }
     if (chosen.includes("backlog")) cols.push({ type: "backlog", value: "backlog", label: "Backlog" });
     return cols;
   }, [columnFilter]);
 
-  const activeColumnValues = useMemo(() => new Set(activeColumns.map((c) => c.value)), [activeColumns]);
-  const colIndex = (value) => activeColumns.findIndex((c) => c.value === value);
+  // Groups adjacent week columns under one month super-header cell.
+  const monthBands = useMemo(() => {
+    const bands = [];
+    let i = 0;
+    while (i < activeColumns.length) {
+      const col = activeColumns[i];
+      if (col.type === "backlog") {
+        bands.push({ label: "", startIdx: i, endIdx: i });
+        i++;
+        continue;
+      }
+      let j = i;
+      while (j + 1 < activeColumns.length && activeColumns[j + 1].month === col.month) j++;
+      bands.push({ label: MONTH_NAMES[col.month - 1], startIdx: i, endIdx: j });
+      i = j + 1;
+    }
+    return bands;
+  }, [activeColumns]);
+
+  const todayColIndex = activeColumns.findIndex((c) => {
+    if (c.type !== "week") return false;
+    const monday = new Date(c.value);
+    const nextMonday = new Date(monday);
+    nextMonday.setDate(monday.getDate() + 7);
+    return TODAY >= monday && TODAY < nextMonday;
+  });
 
   const visible = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -81,14 +103,14 @@ export default function RoadmapGantt({ initiatives, focusAreas, teams, onUpsert,
       if (focusAreaFilter.length && !focusAreaFilter.includes(i.focusArea)) return false;
       if (teamFilter.length && !teamFilter.includes(i.team)) return false;
       if (q && !i.title.toLowerCase().includes(q)) return false;
-      if (!occupiedColumns(i).some((c) => activeColumnValues.has(c))) return false;
+      if (occupiedIndices(i, activeColumns).length === 0) return false;
       return true;
     });
-  }, [initiatives, search, focusAreaFilter, teamFilter, activeColumnValues]);
+  }, [initiatives, search, focusAreaFilter, teamFilter, activeColumns]);
 
-  // Grouped by TEAM only -- focus area is color-coded per row instead of a
-  // second grouping level, since a team's initiatives can span several
-  // focus areas (nesting would duplicate the same team under each one).
+  // Grouped by TEAM only -- focus area is shown as its own column per row
+  // instead of a second grouping level, since a team's initiatives can span
+  // several focus areas (nesting would duplicate the same team under each).
   const rows = useMemo(() => {
     const byTeam = new Map();
     for (const i of visible) {
@@ -128,7 +150,7 @@ export default function RoadmapGantt({ initiatives, focusAreas, teams, onUpsert,
   };
 
   const bodyRowCount = rows.length;
-  const todayColIndex = colIndex(String(CURRENT_MONTH));
+  const lastRowLine = bodyRowCount + 3; // 2 header rows + N body rows -> N+2 tracks -> line N+3
 
   return (
     <>
@@ -165,28 +187,6 @@ export default function RoadmapGantt({ initiatives, focusAreas, teams, onUpsert,
         </div>
       </Card>
 
-      <div className="rg-legend">
-        {Object.entries(STATUS_LABEL)
-          .filter(([k]) => VISIBLE_STATUSES.has(k))
-          .map(([k, label]) => (
-            <span key={k} className="rg-legend__item">
-              <span className={`rg-swatch rg-swatch--${k}`} aria-hidden="true" />
-              {label}
-            </span>
-          ))}
-        <span className="rg-legend__sep" aria-hidden="true" />
-        {focusAreas.map((f) => (
-          <span key={f.id} className="rg-legend__item">
-            <span
-              className="rg-swatch"
-              style={{ background: focusAreaColor(f.name, focusAreaOrder) }}
-              aria-hidden="true"
-            />
-            {f.name}
-          </span>
-        ))}
-      </div>
-
       {rows.length === 0 || activeColumns.length === 0 ? (
         <Card className="cf-empty-results">
           <IllustrationBadge icon="target" tone="blue" size={72} />
@@ -200,26 +200,38 @@ export default function RoadmapGantt({ initiatives, focusAreas, teams, onUpsert,
           <div
             className="rg-grid"
             style={{
-              gridTemplateColumns: `230px repeat(${activeColumns.length}, minmax(64px, 1fr))`,
-              gridTemplateRows: `auto repeat(${bodyRowCount}, 44px)`,
+              gridTemplateColumns: `220px 150px repeat(${activeColumns.length}, minmax(56px, 1fr))`,
+              gridTemplateRows: `auto auto repeat(${bodyRowCount}, 44px)`,
             }}
           >
             {activeColumns.map((col, i) => (
               <div
                 key={`colbg-${col.value}`}
                 className={`rg-colbg${i % 2 === 1 ? " rg-colbg--alt" : ""}${i === todayColIndex ? " rg-colbg--today" : ""}`}
-                style={{ gridColumn: i + 2, gridRow: `1 / ${bodyRowCount + 2}` }}
+                style={{ gridColumn: gridColOf(i), gridRow: `1 / ${lastRowLine}` }}
               />
             ))}
 
-            <div className="rg-headcell rg-headcell--label" style={{ gridRow: 1, gridColumn: 1 }}>
+            <div className="rg-headcell rg-headcell--label" style={{ gridRow: "1 / 3", gridColumn: 1 }}>
               Initiative
             </div>
+            <div className="rg-headcell rg-headcell--focus" style={{ gridRow: "1 / 3", gridColumn: 2 }}>
+              Focus Area
+            </div>
+            {monthBands.map((band) => (
+              <div
+                key={`band-${band.startIdx}`}
+                className="rg-headcell rg-headcell--month"
+                style={{ gridRow: 1, gridColumn: `${gridColOf(band.startIdx)} / ${gridColOf(band.endIdx) + 1}` }}
+              >
+                {band.label}
+              </div>
+            ))}
             {activeColumns.map((col, i) => (
               <div
                 key={col.value}
                 className={`rg-headcell${i === todayColIndex ? " rg-headcell--now" : ""}`}
-                style={{ gridRow: 1, gridColumn: i + 2 }}
+                style={{ gridRow: 2, gridColumn: gridColOf(i) }}
               >
                 {col.label}
                 {i === todayColIndex && <span className="rg-headcell__today">Today</span>}
@@ -227,15 +239,7 @@ export default function RoadmapGantt({ initiatives, focusAreas, teams, onUpsert,
             ))}
 
             {rows.map((r, idx) => (
-              <GridRow
-                key={r.key}
-                row={r}
-                gridRow={idx + 2}
-                colIndex={colIndex}
-                focusAreaOrder={focusAreaOrder}
-                guard={guard}
-                setEditing={setEditing}
-              />
+              <GridRow key={r.key} row={r} gridRow={idx + 3} activeColumns={activeColumns} guard={guard} setEditing={setEditing} />
             ))}
           </div>
         </div>
@@ -255,7 +259,7 @@ export default function RoadmapGantt({ initiatives, focusAreas, teams, onUpsert,
   );
 }
 
-function GridRow({ row, gridRow, colIndex, focusAreaOrder, guard, setEditing }) {
+function GridRow({ row, gridRow, activeColumns, guard, setEditing }) {
   if (row.type === "team") {
     return (
       <div className="rg-teamband" style={{ gridRow, gridColumn: "1 / -1" }}>
@@ -268,28 +272,14 @@ function GridRow({ row, gridRow, colIndex, focusAreaOrder, guard, setEditing }) 
   }
 
   const item = row.item;
-  const cols = occupiedColumns(item)
-    .map((v) => colIndex(v))
-    .filter((i) => i !== -1)
-    .sort((a, b) => a - b);
-  const startCol = cols[0] + 2;
-  const endCol = cols[cols.length - 1] + 3;
+  const idxs = occupiedIndices(item, activeColumns);
+  const startCol = gridColOf(Math.min(...idxs));
+  const endCol = gridColOf(Math.max(...idxs)) + 1;
   const onEdit = () => guard(() => setEditing({ initiative: item }))();
-  const dotColor = focusAreaColor(item.focusArea, focusAreaOrder);
 
   return (
     <Fragment>
-      <button
-        type="button"
-        className="rg-labelcell"
-        style={{ gridRow, gridColumn: 1 }}
-        onClick={onEdit}
-      >
-        <span
-          className="rg-labelcell__dot"
-          style={{ background: dotColor }}
-          title={item.focusArea || "No focus area"}
-        />
+      <button type="button" className="rg-labelcell" style={{ gridRow, gridColumn: 1 }} onClick={onEdit}>
         <span className="rg-labelcell__text">{item.title}</span>
         <div className="rg-tooltip" role="tooltip">
           <div className="rg-tooltip__title">{item.title}</div>
@@ -313,6 +303,9 @@ function GridRow({ row, gridRow, colIndex, focusAreaOrder, guard, setEditing }) 
           </dl>
         </div>
       </button>
+      <div className="rg-focuscell" style={{ gridRow, gridColumn: 2 }}>
+        {item.focusArea || "—"}
+      </div>
       <div
         className={`rg-bar rg-bar--${item.status}`}
         style={{ gridRow, gridColumn: `${startCol} / ${endCol}` }}
@@ -320,10 +313,9 @@ function GridRow({ row, gridRow, colIndex, focusAreaOrder, guard, setEditing }) 
         role="button"
         tabIndex={0}
         onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && onEdit()}
-        title={`${item.title} — ${STATUS_LABEL[item.status]}`}
+        title={item.title}
       >
-        <span className="rg-bar__icon" aria-hidden="true">{BAR_ICON[item.status]}</span>
-        <span className="rg-bar__label">{item.title}</span>
+        <span className="rg-bar__status">{STATUS_LABEL[item.status]}</span>
       </div>
     </Fragment>
   );

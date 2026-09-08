@@ -5,40 +5,6 @@
   align-items: center;
 }
 
-.rg-legend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--lt-space-4);
-  margin-bottom: var(--lt-space-5);
-}
-.rg-legend__item {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: var(--lt-fs-xs);
-  color: var(--lt-text-muted);
-}
-.rg-legend__sep {
-  width: 1px;
-  align-self: stretch;
-  background: var(--lt-color-border);
-}
-.rg-swatch {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  display: inline-block;
-}
-.rg-swatch--backlog {
-  background: var(--lt-red);
-}
-.rg-swatch--in_development {
-  background: var(--lt-green);
-}
-.rg-swatch--completed {
-  background: var(--lt-deep-blue);
-}
-
 .rg-scroll {
   overflow: auto;
   border: 1px solid var(--lt-color-border);
@@ -54,13 +20,14 @@
   position: relative;
 }
 
-/* ---- Header: light, calm -- no heavy dark bands anywhere in this redesign,
-   hierarchy comes from typography and the accent line under "today". ---- */
+/* ---- Header: light, calm -- hierarchy comes from typography and the
+   accent line under "today", not heavy color blocks. Two rows: month
+   super-header, then each month's Mondays underneath it. ---- */
 .rg-headcell {
   position: sticky;
   top: 0;
   z-index: 6;
-  padding: var(--lt-space-3) var(--lt-space-2);
+  padding: var(--lt-space-2) var(--lt-space-2);
   background: var(--lt-white);
   color: var(--lt-text-muted);
   font-size: var(--lt-fs-xs);
@@ -69,14 +36,26 @@
   letter-spacing: 0.03em;
   border-bottom: 1px solid var(--lt-color-border);
 }
-.rg-headcell--label {
-  position: sticky;
+.rg-headcell--month {
+  padding: var(--lt-space-3) var(--lt-space-2) var(--lt-space-1);
+  color: var(--lt-deep-blue);
+  font-family: var(--lt-font-display);
+  font-size: var(--lt-fs-sm);
+  text-transform: none;
+  letter-spacing: 0.01em;
+  border-bottom: none;
+}
+.rg-headcell--label,
+.rg-headcell--focus {
   left: 0;
   z-index: 7;
   text-align: left;
   padding-left: var(--lt-space-4);
   color: var(--lt-deep-blue);
   text-transform: uppercase;
+}
+.rg-headcell--focus {
+  left: 220px;
 }
 .rg-headcell--now {
   position: relative;
@@ -97,7 +76,7 @@
 }
 
 /* Column tints -- vertical striping instead of horizontal row zebra, so
-   scanning "what's happening in October" reads as a column, the way a
+   scanning "what's happening in a given week" reads as a column, the way a
    calendar does. */
 .rg-colbg {
   background: transparent;
@@ -111,10 +90,8 @@
 }
 
 /* ---- Grouping: by team only (a team's initiatives can span several focus
-   areas, so nesting under focus area would duplicate the team band -- focus
-   area is color-coded per row instead, see .rg-labelcell__dot). Bold,
-   uppercase, but still light -- it should never compete visually with the
-   bars, which is where the eye should land. ---- */
+   areas, so nesting under focus area would duplicate the team band --
+   focus area is its own column per row instead, see .rg-focuscell). ---- */
 .rg-teamband {
   background: var(--lt-blue-lighten-4);
   border-top: 1px solid var(--lt-color-border);
@@ -171,12 +148,6 @@
   font-weight: var(--lt-fw-bold);
   cursor: pointer;
 }
-.rg-labelcell__dot {
-  flex: 0 0 auto;
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-}
 .rg-labelcell:hover,
 .rg-labelcell:focus-visible {
   background: var(--lt-blue-lighten-4);
@@ -189,6 +160,27 @@
 .rg-labelcell__text {
   flex: 1;
   min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Focus Area column -- plain text instead of a color code, sticky right
+   next to the Initiative column so it stays visible while scrolling
+   through weeks. */
+.rg-focuscell {
+  position: sticky;
+  left: 220px;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  height: 100%;
+  padding: 0 var(--lt-space-4);
+  border-bottom: 1px solid var(--lt-color-border);
+  border-right: 1px solid var(--lt-color-border);
+  background: var(--lt-white);
+  color: var(--lt-text-secondary);
+  font-size: var(--lt-fs-xs);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -252,7 +244,10 @@
 }
 
 /* ---- Bars: rounded pills floating in whitespace, not blocks that fill the
-   cell -- the main visual fix from the redesign brief. ---- */
+   cell. They carry the status as text (Backlog / In Development /
+   Completed) -- the color + label together replace a separate legend, and
+   the initiative's own name stays in the label column rather than being
+   repeated here. ---- */
 .rg-bar {
   align-self: center;
   height: 28px;
@@ -261,7 +256,7 @@
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 6px;
+  justify-content: center;
   overflow: hidden;
   box-shadow: 0 1px 2px rgba(16, 31, 48, 0.18);
   transition: filter var(--lt-transition), transform var(--lt-transition), box-shadow var(--lt-transition);
@@ -271,21 +266,8 @@
   transform: translateY(-1px) scale(1.02);
   box-shadow: var(--lt-shadow-md);
 }
-.rg-bar__icon {
-  flex: 0 0 auto;
-  display: inline-grid;
-  place-items: center;
-  width: 18px;
-  height: 18px;
-  margin-left: 5px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.3);
-  font-size: 10px;
-  line-height: 1;
-  color: #fff;
-}
-.rg-bar__label {
-  padding-right: 10px;
+.rg-bar__status {
+  padding: 0 10px;
   font-size: var(--lt-fs-xs);
   font-weight: var(--lt-fw-bold);
   color: #fff;
@@ -299,8 +281,7 @@
 .rg-bar--in_development {
   background: var(--lt-green);
 }
-.rg-bar--in_development .rg-bar__label,
-.rg-bar--in_development .rg-bar__icon {
+.rg-bar--in_development .rg-bar__status {
   color: var(--lt-deep-blue);
 }
 .rg-bar--completed {
