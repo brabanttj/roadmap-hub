@@ -48,9 +48,17 @@
 .tx-item__name {
   flex: 1;
   min-width: 0;
+  display: flex;
+  align-items: baseline;
+  gap: var(--lt-space-2);
   font-size: var(--lt-fs-sm);
   color: var(--lt-deep-blue);
   font-weight: var(--lt-fw-bold);
+}
+.tx-item__pm {
+  font-size: var(--lt-fs-xs);
+  font-weight: var(--lt-fw-regular);
+  color: var(--lt-text-muted);
 }
 .tx-empty {
   color: var(--lt-text-muted);

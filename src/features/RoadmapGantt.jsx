@@ -2,7 +2,7 @@ import { Fragment, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Card, Input, Select, MultiSelect, Button, IllustrationBadge } from "../components/ui/index.js";
 import { usePasswordGate } from "../lib/PasswordGate.jsx";
-import { MONTH_NAMES, STATUS_LABEL, mondaysInMonth, formatWeekLabel } from "../lib/text.js";
+import { MONTH_NAMES, STATUS_LABEL } from "../lib/text.js";
 import InitiativeModal from "./InitiativeModal.jsx";
 import "./RoadmapGantt.css";
 
@@ -30,19 +30,21 @@ const DEFAULT_COLUMN_VALUES = [
   "backlog",
 ];
 
-// Explicit (not "auto") header row heights: the sidebar panel and the date
+// Explicit (not "auto") header row height: the sidebar panel and the date
 // panel are two independent DOM trees sitting side by side, so their row
 // tracks must match in pixels exactly or the rows won't line up.
 const HEAD_ROW_H = 34;
 const BODY_ROW_H = 44;
+
+const monthIndex = (year, month) => year * 12 + (month - 1);
 
 // Every field on an initiative, for the hover card -- so a reviewer never
 // has to open the edit modal just to read something.
 function initiativeFacts(item) {
   const fmtDate = (v) => (v ? new Date(v).toLocaleDateString() : "—");
   const schedule =
-    item.startDate && item.endDate
-      ? `Week of ${fmtDate(item.startDate)} – week of ${fmtDate(item.endDate)}`
+    item.startMonth && item.endMonth
+      ? `${MONTH_NAMES[item.startMonth - 1]} ${item.startYear} – ${MONTH_NAMES[item.endMonth - 1]} ${item.endYear}`
       : "Unscheduled (Backlog)";
   return [
     { label: "Team", value: item.team || "—" },
@@ -55,6 +57,7 @@ function initiativeFacts(item) {
     { label: "Future state", value: item.futureState || "—" },
     { label: "Success metrics", value: item.successMetrics || "—" },
     { label: "Impacted teams", value: item.impactedTeams?.length ? item.impactedTeams.join(", ") : "—" },
+    { label: "Impacted products", value: item.impactedProducts?.length ? item.impactedProducts.join(", ") : "—" },
     { label: "Submitted by", value: item.submittedBy || "—" },
     { label: "Submitted", value: fmtDate(item.submittedAt) },
     { label: "Reviewed by", value: item.reviewedBy || "—" },
@@ -86,22 +89,20 @@ function StatusCounts({ counts, total }) {
 
 // Which columns (by index into `activeColumns`) a scheduled/unscheduled
 // initiative occupies, independent of which columns are currently shown.
-// A "week" column is occupied if the initiative's [startDate, endDate]
-// range (both Mondays) overlaps that week's Monday-to-Sunday span.
+// A month column is occupied if it falls within the item's
+// [startYear/startMonth, endYear/endMonth] range, inclusive on both ends.
 function occupiedIndices(item, activeColumns) {
-  if (!item.startDate || !item.endDate) {
+  if (!item.startMonth || !item.endMonth) {
     const idx = activeColumns.findIndex((c) => c.type === "backlog");
     return idx === -1 ? [] : [idx];
   }
-  const start = new Date(item.startDate);
-  const end = new Date(item.endDate);
+  const start = monthIndex(item.startYear, item.startMonth);
+  const end = monthIndex(item.endYear, item.endMonth);
   const out = [];
   activeColumns.forEach((c, i) => {
-    if (c.type !== "week") return;
-    const monday = new Date(c.value);
-    const sunday = new Date(monday);
-    sunday.setDate(monday.getDate() + 6);
-    if (start <= sunday && end >= monday) out.push(i);
+    if (c.type !== "month") return;
+    const idx = monthIndex(c.year, c.month);
+    if (idx >= start && idx <= end) out.push(i);
   });
   return out;
 }
@@ -154,10 +155,10 @@ export default function RoadmapGantt({ initiatives, focusAreas, teams, onUpsert,
   const primaryFallback = groupBy === "team" ? "(No team)" : "(No focus area)";
   const secondaryLabel = groupBy === "team" ? "Focus Area" : "Team";
 
-  // Columns actually rendered: each selected (year, month) broken down into
-  // its Mondays, in chronological order; Backlog forced last whenever it's
-  // part of the selection (or the default/unfiltered view) -- never
-  // wherever the user happened to click it.
+  // Columns actually rendered: one per selected (year, month), in
+  // chronological order; Backlog forced last whenever it's part of the
+  // selection (or the default/unfiltered view) -- never wherever the user
+  // happened to click it.
   const activeColumns = useMemo(() => {
     const chosen = columnFilter.length === 0 ? DEFAULT_COLUMN_VALUES : columnFilter;
     const monthYears = chosen
@@ -167,53 +168,20 @@ export default function RoadmapGantt({ initiatives, focusAreas, teams, onUpsert,
         return { year: y, month: m };
       })
       .sort((a, b) => a.year - b.year || a.month - b.month);
-    const cols = [];
-    for (const { year, month } of monthYears) {
-      for (const monday of mondaysInMonth(year, month)) {
-        cols.push({
-          type: "week",
-          year,
-          month,
-          value: monday.toISOString().slice(0, 10),
-          label: formatWeekLabel(monday),
-        });
-      }
-    }
+    const cols = monthYears.map(({ year, month }) => ({
+      type: "month",
+      year,
+      month,
+      value: `${year}-${month}`,
+      label: `${MONTH_NAMES[month - 1]} ${year}`,
+    }));
     if (chosen.includes("backlog")) cols.push({ type: "backlog", value: "backlog", label: "Backlog" });
     return cols;
   }, [columnFilter]);
 
-  // Groups adjacent week columns under one month super-header cell.
-  const monthBands = useMemo(() => {
-    const bands = [];
-    let i = 0;
-    while (i < activeColumns.length) {
-      const col = activeColumns[i];
-      if (col.type === "backlog") {
-        bands.push({ label: "", startIdx: i, endIdx: i });
-        i++;
-        continue;
-      }
-      let j = i;
-      while (
-        j + 1 < activeColumns.length &&
-        activeColumns[j + 1].month === col.month &&
-        activeColumns[j + 1].year === col.year
-      )
-        j++;
-      bands.push({ label: `${MONTH_NAMES[col.month - 1]} ${col.year}`, startIdx: i, endIdx: j });
-      i = j + 1;
-    }
-    return bands;
-  }, [activeColumns]);
-
-  const todayColIndex = activeColumns.findIndex((c) => {
-    if (c.type !== "week") return false;
-    const monday = new Date(c.value);
-    const nextMonday = new Date(monday);
-    nextMonday.setDate(monday.getDate() + 7);
-    return TODAY >= monday && TODAY < nextMonday;
-  });
+  const todayColIndex = activeColumns.findIndex(
+    (c) => c.type === "month" && c.year === TODAY.getFullYear() && c.month === TODAY.getMonth() + 1
+  );
 
   const visible = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -273,15 +241,15 @@ export default function RoadmapGantt({ initiatives, focusAreas, teams, onUpsert,
   };
 
   const bodyRowCount = rows.length;
-  const rowsTemplate = `${HEAD_ROW_H}px ${HEAD_ROW_H}px repeat(${bodyRowCount}, ${BODY_ROW_H}px)`;
-  const lastRowLine = bodyRowCount + 3;
+  const rowsTemplate = `${HEAD_ROW_H}px repeat(${bodyRowCount}, ${BODY_ROW_H}px)`;
+  const lastRowLine = bodyRowCount + 2;
 
   // Which group band should be floating, pinned just under the column
   // headers -- the last group whose own row has scrolled up underneath
   // that pin point. It stays put until the next group's row reaches the
   // same point and takes over, the same way section headers work in a
   // grouped list.
-  const groupAnchors = useMemo(() => rows.filter((r) => r.type === "group").map((r, i) => ({ row: r, idx: rows.indexOf(r) })), [rows]);
+  const groupAnchors = useMemo(() => rows.filter((r) => r.type === "group").map((r) => ({ row: r, idx: rows.indexOf(r) })), [rows]);
   const activeGroup = useMemo(() => {
     let current = null;
     for (const a of groupAnchors) {
@@ -377,20 +345,20 @@ export default function RoadmapGantt({ initiatives, focusAreas, teams, onUpsert,
               vertically-scrolling panels, kept in sync, avoids that.) */}
           <div className="rg-sidebar" ref={sidebarRef} onScroll={onSidebarScroll}>
             <div className="rg-sidebargrid" style={{ gridTemplateRows: rowsTemplate }}>
-              <div className="rg-headcell rg-headcell--label" style={{ gridRow: "1 / 3", gridColumn: 1 }}>
+              <div className="rg-headcell rg-headcell--label" style={{ gridRow: 1, gridColumn: 1 }}>
                 <span>Initiative</span>
                 <StatusCounts counts={totalCounts} total={visible.length} />
               </div>
-              <div className="rg-headcell rg-headcell--focus" style={{ gridRow: "1 / 3", gridColumn: 2 }}>
+              <div className="rg-headcell rg-headcell--focus" style={{ gridRow: 1, gridColumn: 2 }}>
                 {secondaryLabel}
               </div>
               {rows.map((r, idx) => (
-                <SidebarRow key={r.key} row={r} gridRow={idx + 3} secondaryField={secondaryField} guard={guard} setEditing={setEditing} onHover={setHover} />
+                <SidebarRow key={r.key} row={r} gridRow={idx + 2} secondaryField={secondaryField} guard={guard} setEditing={setEditing} onHover={setHover} />
               ))}
               {activeGroup && (
                 <div
                   className="rg-teamband rg-teamband--sticky"
-                  style={{ gridRow: `3 / ${lastRowLine}`, gridColumn: "1 / -1", alignSelf: "start", top: HEAD_ROW_H * 2 }}
+                  style={{ gridRow: `2 / ${lastRowLine}`, gridColumn: "1 / -1", alignSelf: "start", top: HEAD_ROW_H }}
                 >
                   <span className="rg-teamband__name">{activeGroup.row.label}</span>
                   <StatusCounts counts={activeGroup.row.counts} total={activeGroup.row.count} />
@@ -415,32 +383,23 @@ export default function RoadmapGantt({ initiatives, focusAreas, teams, onUpsert,
                 />
               ))}
 
-              {monthBands.map((band) => (
-                <div
-                  key={`band-${band.startIdx}`}
-                  className="rg-headcell rg-headcell--month"
-                  style={{ gridRow: 1, gridColumn: `${band.startIdx + 1} / ${band.endIdx + 2}` }}
-                >
-                  {band.label}
-                </div>
-              ))}
               {activeColumns.map((col, i) => (
                 <div
                   key={col.value}
                   className={`rg-headcell${i === todayColIndex ? " rg-headcell--now" : ""}`}
-                  style={{ gridRow: 2, gridColumn: i + 1, top: HEAD_ROW_H }}
+                  style={{ gridRow: 1, gridColumn: i + 1 }}
                 >
                   {col.label}
                 </div>
               ))}
 
               {rows.map((r, idx) => (
-                <DateRow key={r.key} row={r} gridRow={idx + 3} activeColumns={activeColumns} guard={guard} setEditing={setEditing} />
+                <DateRow key={r.key} row={r} gridRow={idx + 2} activeColumns={activeColumns} guard={guard} setEditing={setEditing} />
               ))}
               {activeGroup && (
                 <div
                   className="rg-teamband rg-teamband--filler rg-teamband--sticky"
-                  style={{ gridRow: `3 / ${lastRowLine}`, gridColumn: "1 / -1", alignSelf: "start", top: HEAD_ROW_H * 2 }}
+                  style={{ gridRow: `2 / ${lastRowLine}`, gridColumn: "1 / -1", alignSelf: "start", top: HEAD_ROW_H }}
                 />
               )}
             </div>

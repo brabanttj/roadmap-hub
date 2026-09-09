@@ -4,7 +4,6 @@
  * Edit through the app from here on -- re-running `npm run db:seed` resets
  * to this baseline.
  */
-import { mondaysInMonth } from "../src/lib/text.js";
 
 export const FOCUS_AREAS = [
   "Core Platform",
@@ -16,34 +15,23 @@ export const FOCUS_AREAS = [
 ];
 
 export const TEAMS = [
-  "Growth",
-  "Core Services",
-  "Customer Experience",
-  "Data Products",
-  "Developer Experience",
-  "Integrations",
-  "Mobile",
-  "Security",
-  "Analytics",
-  "Monetization",
-  "Customer Operations",
-  "AI Platform",
-  "Infrastructure",
-  "Operations",
+  { name: "Growth", pmName: "Priya Nair" },
+  { name: "Core Services", pmName: "Marcus Chen" },
+  { name: "Customer Experience", pmName: "Dana Whitfield" },
+  { name: "Data Products", pmName: "Sam Okafor" },
+  { name: "Developer Experience", pmName: "Leah Bergstrom" },
+  { name: "Integrations", pmName: "Ravi Patel" },
+  { name: "Mobile", pmName: "Jordan Kim" },
+  { name: "Security", pmName: "Alicia Moreno" },
+  { name: "Analytics", pmName: "Tomás Reyes" },
+  { name: "Monetization", pmName: "Grace Liu" },
+  { name: "Customer Operations", pmName: "Noah Fischer" },
+  { name: "AI Platform", pmName: "Wren Ellison" },
+  { name: "Infrastructure", pmName: "Devon Marsh" },
+  { name: "Operations", pmName: "Kelsey Adams" },
 ];
 
 const YEAR = 2026;
-
-// start/end dates are always a Monday (the Gantt schedules at week
-// granularity) -- these helpers pick the first Monday of `startMonth` and
-// the last Monday of `endMonth`, so the seeded bars span the same whole
-// months the original screenshot showed.
-const iso = (d) => d.toISOString().slice(0, 10);
-const firstMondayOf = (month) => iso(mondaysInMonth(YEAR, month)[0]);
-const lastMondayOf = (month) => {
-  const weeks = mondaysInMonth(YEAR, month);
-  return iso(weeks[weeks.length - 1]);
-};
 
 export const INITIATIVES = [
   {
@@ -55,9 +43,9 @@ export const INITIATIVES = [
     futureState: "A guided, unified onboarding flow personalizes setup, surfaces next-best actions, and tracks activation progress end-to-end.",
     successMetrics: "Increase activation rate and time-to-value; decrease setup abandonment.",
     impactedTeams: ["Sales", "Support"],
+    impactedProducts: ["Leads"],
     status: "completed",
-    startDate: firstMondayOf(7),
-    endDate: firstMondayOf(7),
+    startYear: YEAR, startMonth: 7, endYear: YEAR, endMonth: 7,
   },
   {
     focusArea: "Data",
@@ -68,9 +56,9 @@ export const INITIATIVES = [
     futureState: "Reusable, governed audience cohorts are available in-product and to go-to-market teams for precise targeting.",
     successMetrics: "Increase campaign relevance and qualified pipeline.",
     impactedTeams: ["Marketing", "Data Science"],
+    impactedProducts: ["Clicks", "Leads"],
     status: "in_development",
-    startDate: firstMondayOf(8),
-    endDate: lastMondayOf(9),
+    startYear: YEAR, startMonth: 8, endYear: YEAR, endMonth: 9,
   },
   {
     focusArea: "Platform",
@@ -81,9 +69,9 @@ export const INITIATIVES = [
     futureState: "Core APIs operate with error budgets, actionable alerts, automated failover, and consistent reliability standards.",
     successMetrics: "Maintain 99.95% availability; decrease incident recovery time.",
     impactedTeams: ["All Product Teams"],
+    impactedProducts: ["All"],
     status: "in_development",
-    startDate: firstMondayOf(8),
-    endDate: lastMondayOf(8),
+    startYear: YEAR, startMonth: 8, endYear: YEAR, endMonth: 8,
   },
   {
     focusArea: "Experience",
@@ -94,9 +82,9 @@ export const INITIATIVES = [
     futureState: "Customers self-manage billing through a secure, intuitive workspace with clear audit history and fewer support handoffs.",
     successMetrics: "Increase self-service resolution; decrease billing contacts.",
     impactedTeams: ["Finance", "Support"],
+    impactedProducts: ["Calls"],
     status: "completed",
-    startDate: firstMondayOf(8),
-    endDate: lastMondayOf(8),
+    startYear: YEAR, startMonth: 8, endYear: YEAR, endMonth: 8,
   },
   {
     focusArea: "Data",
@@ -107,9 +95,9 @@ export const INITIATIVES = [
     futureState: "A governed copilot answers trusted business questions in natural language with citations, guardrails, and feedback loops.",
     successMetrics: "Increase insight adoption; maintain answer quality and data controls.",
     impactedTeams: ["Analytics", "Customer Success"],
+    impactedProducts: ["Unknown"],
     status: "backlog",
-    startDate: null,
-    endDate: null,
+    startYear: null, startMonth: null, endYear: null, endMonth: null,
   },
   {
     focusArea: "Platform",
@@ -120,9 +108,9 @@ export const INITIATIVES = [
     futureState: "Teams use standardized CI/CD templates, progressive delivery, and automated rollback across supported services.",
     successMetrics: "Decrease deployment lead time and rollback frequency.",
     impactedTeams: ["Engineering", "QA"],
+    impactedProducts: ["Unknown"],
     status: "backlog",
-    startDate: null,
-    endDate: null,
+    startYear: null, startMonth: null, endYear: null, endMonth: null,
   },
   {
     focusArea: "Partnerships",
@@ -133,9 +121,9 @@ export const INITIATIVES = [
     futureState: "A curated marketplace makes certified integrations, shared value propositions, and activation paths easy to discover.",
     successMetrics: "Increase partner-sourced pipeline and integration adoption.",
     impactedTeams: ["Partnerships", "Sales"],
+    impactedProducts: ["Leads"],
     status: "backlog",
-    startDate: null,
-    endDate: null,
+    startYear: null, startMonth: null, endYear: null, endMonth: null,
   },
   {
     focusArea: "Experience",
@@ -146,9 +134,9 @@ export const INITIATIVES = [
     futureState: "Customers complete core workspace tasks on mobile through fast, reliable, and accessible native experiences.",
     successMetrics: "Increase mobile task completion and weekly active users.",
     impactedTeams: ["Design", "Support"],
+    impactedProducts: ["Clicks"],
     status: "in_development",
-    startDate: firstMondayOf(7),
-    endDate: lastMondayOf(8),
+    startYear: YEAR, startMonth: 7, endYear: YEAR, endMonth: 8,
   },
   {
     focusArea: "Platform",
@@ -159,9 +147,9 @@ export const INITIATIVES = [
     futureState: "Role templates, access reviews, and auditable controls enforce least-privilege access at scale.",
     successMetrics: "Increase access governance; decrease privileged-access risk.",
     impactedTeams: ["IT", "Compliance"],
+    impactedProducts: ["All"],
     status: "completed",
-    startDate: firstMondayOf(7),
-    endDate: lastMondayOf(8),
+    startYear: YEAR, startMonth: 7, endYear: YEAR, endMonth: 8,
   },
   {
     focusArea: "Data",
@@ -172,9 +160,9 @@ export const INITIATIVES = [
     futureState: "Certified metrics have clear definitions, owners, freshness signals, and a single discovery experience.",
     successMetrics: "Increase trusted-report usage; decrease metric discrepancies.",
     impactedTeams: ["Finance", "Analytics"],
+    impactedProducts: ["All"],
     status: "in_development",
-    startDate: firstMondayOf(7),
-    endDate: lastMondayOf(9),
+    startYear: YEAR, startMonth: 7, endYear: YEAR, endMonth: 9,
   },
   {
     focusArea: "Core Platform",
@@ -185,9 +173,9 @@ export const INITIATIVES = [
     futureState: "Usage-based packaging and metering support transparent value alignment, expansion, and scalable monetization.",
     successMetrics: "Increase expansion revenue and packaging conversion.",
     impactedTeams: ["Finance", "Sales Operations"],
+    impactedProducts: ["Leads"],
     status: "completed",
-    startDate: firstMondayOf(7),
-    endDate: firstMondayOf(7),
+    startYear: YEAR, startMonth: 7, endYear: YEAR, endMonth: 7,
   },
   {
     focusArea: "Operations",
@@ -198,9 +186,9 @@ export const INITIATIVES = [
     futureState: "Intent-aware automation classifies, routes, and prioritizes requests so agents focus on complex customer needs.",
     successMetrics: "Decrease first-response time and manual triage effort.",
     impactedTeams: ["Support", "Customer Success"],
+    impactedProducts: ["Calls"],
     status: "in_development",
-    startDate: firstMondayOf(7),
-    endDate: lastMondayOf(12),
+    startYear: YEAR, startMonth: 7, endYear: YEAR, endMonth: 12,
   },
   {
     focusArea: "Platform",
@@ -211,9 +199,9 @@ export const INITIATIVES = [
     futureState: "A reusable agent framework provides secure orchestration, evaluation, monitoring, and policy controls.",
     successMetrics: "Increase agent delivery speed; maintain security and observability.",
     impactedTeams: ["Engineering", "Security"],
+    impactedProducts: ["Unknown"],
     status: "in_development",
-    startDate: firstMondayOf(9),
-    endDate: lastMondayOf(11),
+    startYear: YEAR, startMonth: 9, endYear: YEAR, endMonth: 11,
   },
   {
     focusArea: "Experience",
@@ -224,9 +212,9 @@ export const INITIATIVES = [
     futureState: "Proactive health scores surface actionable risk, adoption, and expansion signals with recommended interventions.",
     successMetrics: "Increase retention and expansion signal coverage.",
     impactedTeams: ["Customer Success", "Sales"],
+    impactedProducts: ["Leads"],
     status: "completed",
-    startDate: firstMondayOf(7),
-    endDate: firstMondayOf(7),
+    startYear: YEAR, startMonth: 7, endYear: YEAR, endMonth: 7,
   },
   {
     focusArea: "Platform",
@@ -237,9 +225,9 @@ export const INITIATIVES = [
     futureState: "Service owners receive near-real-time unit-cost visibility and prioritized optimization recommendations.",
     successMetrics: "Decrease unit cost; increase tagged-spend coverage.",
     impactedTeams: ["Finance", "Engineering"],
+    impactedProducts: ["All"],
     status: "in_development",
-    startDate: firstMondayOf(9),
-    endDate: lastMondayOf(12),
+    startYear: YEAR, startMonth: 9, endYear: YEAR, endMonth: 12,
   },
   {
     focusArea: "Data",
@@ -250,9 +238,9 @@ export const INITIATIVES = [
     futureState: "A durable real-time event foundation provides complete, governed streams for analytics and automation.",
     successMetrics: "Increase event completeness and data latency performance.",
     impactedTeams: ["Analytics", "Integrations"],
+    impactedProducts: ["Clicks"],
     status: "completed",
-    startDate: firstMondayOf(7),
-    endDate: firstMondayOf(7),
+    startYear: YEAR, startMonth: 7, endYear: YEAR, endMonth: 7,
   },
   {
     focusArea: "Partnerships",
@@ -263,9 +251,9 @@ export const INITIATIVES = [
     futureState: "Expanded SSO, SCIM, and admin controls meet enterprise readiness with streamlined provisioning and governance.",
     successMetrics: "Increase enterprise readiness and sales-cycle velocity.",
     impactedTeams: ["IT", "Sales Engineering"],
+    impactedProducts: ["Unknown"],
     status: "in_development",
-    startDate: firstMondayOf(9),
-    endDate: lastMondayOf(10),
+    startYear: YEAR, startMonth: 9, endYear: YEAR, endMonth: 10,
   },
   {
     focusArea: "Operations",
@@ -276,8 +264,8 @@ export const INITIATIVES = [
     futureState: "A searchable, owner-managed knowledge base keeps playbooks current and accelerates resolution.",
     successMetrics: "Decrease time-to-resolution and content maintenance effort.",
     impactedTeams: ["Support", "Enablement"],
+    impactedProducts: ["Calls"],
     status: "backlog",
-    startDate: null,
-    endDate: null,
+    startYear: null, startMonth: null, endYear: null, endMonth: null,
   },
 ];

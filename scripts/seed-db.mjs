@@ -20,7 +20,11 @@ try {
     await client.query(`INSERT INTO focus_areas (name, sort_order) VALUES ($1, $2)`, [FOCUS_AREAS[i], i]);
   }
   for (let i = 0; i < TEAMS.length; i++) {
-    await client.query(`INSERT INTO teams (name, sort_order) VALUES ($1, $2)`, [TEAMS[i], i]);
+    await client.query(`INSERT INTO teams (name, pm_name, sort_order) VALUES ($1, $2, $3)`, [
+      TEAMS[i].name,
+      TEAMS[i].pmName,
+      i,
+    ]);
   }
 
   for (let i = 0; i < INITIATIVES.length; i++) {
@@ -28,8 +32,9 @@ try {
     await client.query(
       `INSERT INTO initiatives (
          focus_area, team, title, summary, current_state, future_state, success_metrics,
-         impacted_teams, status, completed, start_date, end_date, submitted_by, sort_order
-       ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)`,
+         impacted_teams, impacted_products, status, completed,
+         start_year, start_month, end_year, end_month, submitted_by, sort_order
+       ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)`,
       [
         n.focusArea,
         n.team,
@@ -39,10 +44,13 @@ try {
         n.futureState,
         n.successMetrics,
         n.impactedTeams,
+        n.impactedProducts,
         n.status,
         n.status === "completed",
-        n.startDate,
-        n.endDate,
+        n.startYear,
+        n.startMonth,
+        n.endYear,
+        n.endMonth,
         "seed",
         i,
       ]

@@ -124,8 +124,8 @@
 }
 
 /* ---- Header: light, calm -- hierarchy comes from typography and the
-   accent line under "today", not heavy color blocks. Two rows: month
-   super-header, then each month's Mondays underneath it. Shared between
+   accent line under "today", not heavy color blocks. One row: each
+   column is a whole month (e.g. "Jan 2026") or Backlog. Shared between
    the sidebar and the date panel, so both use the exact same explicit
    HEAD_ROW_H (see RoadmapGantt.jsx) -- they're two independent grids that
    need to line up pixel-for-pixel. ---- */
@@ -138,24 +138,15 @@
   justify-content: center;
   padding: var(--lt-space-2) var(--lt-space-2);
   background: var(--lt-white);
-  color: var(--lt-text-muted);
-  font-size: var(--lt-fs-xs);
-  font-weight: var(--lt-fw-bold);
+  color: var(--lt-deep-blue);
+  font-family: var(--lt-font-display);
+  font-size: var(--lt-fs-sm);
   text-align: center;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.01em;
   border-bottom: 1px solid var(--lt-color-border);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-.rg-headcell--month {
-  padding: var(--lt-space-2) var(--lt-space-2) 2px;
-  color: var(--lt-deep-blue);
-  font-family: var(--lt-font-display);
-  font-size: var(--lt-fs-sm);
-  text-transform: none;
-  letter-spacing: 0.01em;
-  border-bottom: none;
 }
 .rg-headcell--label,
 .rg-headcell--focus {
@@ -163,6 +154,10 @@
   gap: var(--lt-space-2);
   text-align: left;
   padding-left: var(--lt-space-4);
+  font-family: var(--lt-font-body);
+  font-size: var(--lt-fs-xs);
+  font-weight: var(--lt-fw-bold);
+  letter-spacing: 0.03em;
   color: var(--lt-deep-blue);
   text-transform: uppercase;
 }

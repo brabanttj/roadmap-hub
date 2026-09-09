@@ -11,24 +11,25 @@ const INITIATIVE_COLUMNS = `
   id, focus_area AS "focusArea", team, title, summary,
   current_state AS "currentState", future_state AS "futureState",
   success_metrics AS "successMetrics", impacted_teams AS "impactedTeams",
+  impacted_products AS "impactedProducts",
   status, completed,
-  to_char(start_date, 'YYYY-MM-DD') AS "startDate",
-  to_char(end_date, 'YYYY-MM-DD') AS "endDate",
+  start_year AS "startYear", start_month AS "startMonth",
+  end_year AS "endYear", end_month AS "endMonth",
   submitted_by AS "submittedBy", submitted_at AS "submittedAt",
   reviewed_by AS "reviewedBy", reviewed_at AS "reviewedAt",
   reviewer_notes AS "reviewerNotes", sort_order AS "sortOrder"
 `;
 
-// Both start/end are always a Monday (the first day of that week), picked
-// from the same week list the Gantt view renders -- see lib/text.js
-// mondaysInMonth on the client. Anything else is rejected rather than
-// silently coerced, since a non-Monday date would misalign with the grid.
-function toWeekStartOrNull(v) {
-  if (!v) return null;
-  const s = String(v).trim();
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return null;
-  const d = new Date(`${s}T00:00:00Z`);
-  return Number.isNaN(d.getTime()) || d.getUTCDay() !== 1 ? null : s;
+// Month granularity, no week detail. A year/month pair is either both
+// present (scheduled) or both null (unscheduled/backlog) -- never a
+// year without a month or vice versa.
+function toMonthOrNull(v) {
+  const n = Number(v);
+  return Number.isInteger(n) && n >= 1 && n <= 12 ? n : null;
+}
+function toYearOrNull(v) {
+  const n = Number(v);
+  return Number.isInteger(n) ? n : null;
 }
 
 // ---- GET /api/bootstrap ----------------------------------------------------
@@ -36,7 +37,7 @@ router.get("/bootstrap", async (req, res) => {
   try {
     const [focusAreasRes, teamsRes, initiativesRes] = await Promise.all([
       pool.query(`SELECT id, name FROM focus_areas ORDER BY sort_order, name`),
-      pool.query(`SELECT id, name FROM teams ORDER BY sort_order, name`),
+      pool.query(`SELECT id, name, pm_name AS "pmName" FROM teams ORDER BY sort_order, name`),
       pool.query(`SELECT ${INITIATIVE_COLUMNS} FROM initiatives ORDER BY sort_order, id`),
     ]);
     res.json({
@@ -67,8 +68,8 @@ router.post("/ideas", async (req, res) => {
     const { rows } = await pool.query(
       `INSERT INTO initiatives (
          focus_area, team, title, summary, current_state, future_state, success_metrics,
-         impacted_teams, status, submitted_by, sort_order
-       ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,'idea',$9,
+         impacted_teams, impacted_products, status, submitted_by, sort_order
+       ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,'idea',$10,
          (SELECT COALESCE(MAX(sort_order), 0) + 1 FROM initiatives))
        RETURNING ${INITIATIVE_COLUMNS}`,
       [
@@ -80,6 +81,7 @@ router.post("/ideas", async (req, res) => {
         String(b.futureState || "").trim(),
         String(b.successMetrics || "").trim(),
         Array.isArray(b.impactedTeams) ? b.impactedTeams.map((t) => String(t).trim()).filter(Boolean) : [],
+        Array.isArray(b.impactedProducts) ? b.impactedProducts.map((t) => String(t).trim()).filter(Boolean) : [],
         String(b.submittedBy).trim(),
       ]
     );
@@ -140,8 +142,9 @@ router.post("/initiatives", async (req, res) => {
     const { rows } = await pool.query(
       `INSERT INTO initiatives (
          focus_area, team, title, summary, current_state, future_state, success_metrics,
-         impacted_teams, status, completed, start_date, end_date, submitted_by, sort_order
-       ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,
+         impacted_teams, impacted_products, status, completed,
+         start_year, start_month, end_year, end_month, submitted_by, sort_order
+       ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,
          (SELECT COALESCE(MAX(sort_order), 0) + 1 FROM initiatives))
        RETURNING ${INITIATIVE_COLUMNS}`,
       [
@@ -153,10 +156,13 @@ router.post("/initiatives", async (req, res) => {
         String(b.futureState || "").trim(),
         String(b.successMetrics || "").trim(),
         Array.isArray(b.impactedTeams) ? b.impactedTeams.map((t) => String(t).trim()).filter(Boolean) : [],
+        Array.isArray(b.impactedProducts) ? b.impactedProducts.map((t) => String(t).trim()).filter(Boolean) : [],
         status,
         status === "completed",
-        toWeekStartOrNull(b.startDate),
-        toWeekStartOrNull(b.endDate),
+        toYearOrNull(b.startYear),
+        toMonthOrNull(b.startMonth),
+        toYearOrNull(b.endYear),
+        toMonthOrNull(b.endMonth),
         String(b.submittedBy || "").trim() || "reviewer",
       ]
     );
@@ -183,19 +189,22 @@ router.put("/initiatives/:id", async (req, res) => {
   try {
     const { rows } = await pool.query(
       `UPDATE initiatives SET
-         focus_area      = $1,
-         team            = $2,
-         title           = $3,
-         summary         = $4,
-         current_state   = $5,
-         future_state    = $6,
-         success_metrics = $7,
-         impacted_teams  = $8,
-         status          = $9,
-         completed       = $10,
-         start_date      = $11,
-         end_date        = $12
-       WHERE id = $13
+         focus_area        = $1,
+         team              = $2,
+         title             = $3,
+         summary           = $4,
+         current_state     = $5,
+         future_state      = $6,
+         success_metrics   = $7,
+         impacted_teams    = $8,
+         impacted_products = $9,
+         status            = $10,
+         completed         = $11,
+         start_year        = $12,
+         start_month       = $13,
+         end_year          = $14,
+         end_month         = $15
+       WHERE id = $16
        RETURNING ${INITIATIVE_COLUMNS}`,
       [
         String(b.focusArea || "").trim(),
@@ -206,10 +215,13 @@ router.put("/initiatives/:id", async (req, res) => {
         String(b.futureState || "").trim(),
         String(b.successMetrics || "").trim(),
         Array.isArray(b.impactedTeams) ? b.impactedTeams.map((t) => String(t).trim()).filter(Boolean) : [],
+        Array.isArray(b.impactedProducts) ? b.impactedProducts.map((t) => String(t).trim()).filter(Boolean) : [],
         status || "idea",
         status === "completed" || Boolean(b.completed),
-        toWeekStartOrNull(b.startDate),
-        toWeekStartOrNull(b.endDate),
+        toYearOrNull(b.startYear),
+        toMonthOrNull(b.startMonth),
+        toYearOrNull(b.endYear),
+        toMonthOrNull(b.endMonth),
         id,
       ]
     );
@@ -236,19 +248,33 @@ router.delete("/initiatives/:id", async (req, res) => {
 });
 
 // ---- Focus areas + Teams: flat CRUD taxonomy, mirrored ----------------------
-function taxonomyRoutes(table) {
+// Teams additionally carry a required pm_name (the Product Manager for that
+// team) -- focus areas don't have an equivalent, hence the `withPm` flag.
+function taxonomyRoutes(table, { withPm = false } = {}) {
   const t = express.Router();
+  const cols = withPm ? `id, name, pm_name AS "pmName"` : `id, name`;
 
   t.post("/", async (req, res) => {
     const name = String(req.body?.name || "").trim();
     if (!name) return res.status(400).json({ ok: false, error: "Name is required" });
+    const pmName = withPm ? String(req.body?.pmName || "").trim() : null;
+    if (withPm && !pmName) {
+      return res.status(400).json({ ok: false, error: "Product Manager is required" });
+    }
     try {
-      const { rows } = await pool.query(
-        `INSERT INTO ${table} (name, sort_order)
-         VALUES ($1, (SELECT COALESCE(MAX(sort_order), 0) + 1 FROM ${table}))
-         RETURNING id, name`,
-        [name]
-      );
+      const { rows } = withPm
+        ? await pool.query(
+            `INSERT INTO ${table} (name, pm_name, sort_order)
+             VALUES ($1, $2, (SELECT COALESCE(MAX(sort_order), 0) + 1 FROM ${table}))
+             RETURNING ${cols}`,
+            [name, pmName]
+          )
+        : await pool.query(
+            `INSERT INTO ${table} (name, sort_order)
+             VALUES ($1, (SELECT COALESCE(MAX(sort_order), 0) + 1 FROM ${table}))
+             RETURNING ${cols}`,
+            [name]
+          );
       res.json({ ok: true, item: rows[0] });
     } catch (e) {
       if (e.code === "23505") {
@@ -264,11 +290,17 @@ function taxonomyRoutes(table) {
     const name = String(req.body?.name || "").trim();
     if (!Number.isInteger(id)) return res.status(400).json({ ok: false, error: "Invalid id" });
     if (!name) return res.status(400).json({ ok: false, error: "Name is required" });
+    const pmName = withPm ? String(req.body?.pmName || "").trim() : null;
+    if (withPm && !pmName) {
+      return res.status(400).json({ ok: false, error: "Product Manager is required" });
+    }
     try {
-      const { rows } = await pool.query(
-        `UPDATE ${table} SET name = $1 WHERE id = $2 RETURNING id, name`,
-        [name, id]
-      );
+      const { rows } = withPm
+        ? await pool.query(
+            `UPDATE ${table} SET name = $1, pm_name = $2 WHERE id = $3 RETURNING ${cols}`,
+            [name, pmName, id]
+          )
+        : await pool.query(`UPDATE ${table} SET name = $1 WHERE id = $2 RETURNING ${cols}`, [name, id]);
       if (!rows.length) return res.status(404).json({ ok: false, error: "Not found" });
       res.json({ ok: true, item: rows[0] });
     } catch (e) {
@@ -297,6 +329,6 @@ function taxonomyRoutes(table) {
 }
 
 router.use("/focus-areas", taxonomyRoutes("focus_areas"));
-router.use("/teams", taxonomyRoutes("teams"));
+router.use("/teams", taxonomyRoutes("teams", { withPm: true }));
 
 export default router;

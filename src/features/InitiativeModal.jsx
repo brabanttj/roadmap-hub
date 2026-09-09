@@ -1,25 +1,13 @@
 import { useState } from "react";
-import { Modal, Input, Select, Button } from "../components/ui/index.js";
-import { MONTH_NAMES, STATUS_LABEL, mondaysInMonth, formatWeekLabel } from "../lib/text.js";
+import { Modal, Input, Select, MultiSelect, Button } from "../components/ui/index.js";
+import { MONTH_NAMES, STATUS_LABEL, IMPACTED_PRODUCTS } from "../lib/text.js";
 import "./InitiativeModal.css";
 
 const FRIENDLY_ERROR = "Something went wrong. Please try again.";
 const STATUS_OPTIONS = ["backlog", "in_development", "completed"];
 const REFERENCE_YEAR = new Date().getFullYear();
 const YEAR_OPTIONS = [REFERENCE_YEAR - 1, REFERENCE_YEAR, REFERENCE_YEAR + 1];
-
-// Every Monday of the given year, grouped by month -- the same week list
-// the Gantt view itself renders, so scheduling here always lines up with a
-// real column on the roadmap.
-function weeksByMonth(year) {
-  return MONTH_NAMES.map((name, idx) => ({
-    name,
-    weeks: mondaysInMonth(year, idx + 1).map((d) => ({
-      value: d.toISOString().slice(0, 10),
-      label: formatWeekLabel(d),
-    })),
-  }));
-}
+const MONTH_OPTIONS = MONTH_NAMES.map((name, idx) => ({ value: idx + 1, label: name }));
 
 function toFormState(initiative, focusAreas, teams) {
   return {
@@ -31,15 +19,16 @@ function toFormState(initiative, focusAreas, teams) {
     futureState: initiative?.futureState || "",
     successMetrics: initiative?.successMetrics || "",
     impactedTeams: (initiative?.impactedTeams || []).join(", "),
+    impactedProducts: initiative?.impactedProducts || [],
     status: initiative?.status && initiative.status !== "idea" && initiative.status !== "rejected"
       ? initiative.status
       : "backlog",
-    startYear: initiative?.startDate ? Number(initiative.startDate.slice(0, 4)) : REFERENCE_YEAR,
-    endYear: initiative?.endDate ? Number(initiative.endDate.slice(0, 4)) : REFERENCE_YEAR,
     // Backlog means "not yet scheduled" -- unscheduled (blank) is only
-    // valid while status stays Backlog; anything else needs a real range.
-    startDate: initiative?.startDate || "",
-    endDate: initiative?.endDate || "",
+    // valid while status stays Backlog; anything else needs a real month.
+    startYear: initiative?.startYear || REFERENCE_YEAR,
+    startMonth: initiative?.startMonth || "",
+    endYear: initiative?.endYear || REFERENCE_YEAR,
+    endMonth: initiative?.endMonth || "",
   };
 }
 
@@ -52,7 +41,7 @@ export default function InitiativeModal({ initiative, focusAreas, teams, onClose
 
   const upd = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
   // Backlog is explicitly "not yet scheduled" -- everything else needs a
-  // real start/end week.
+  // real start/end month.
   const scheduleRequired = form.status !== "backlog";
   const valid =
     form.title.trim() &&
@@ -63,18 +52,8 @@ export default function InitiativeModal({ initiative, focusAreas, teams, onClose
     form.futureState.trim() &&
     form.successMetrics.trim() &&
     form.impactedTeams.trim() &&
-    (!scheduleRequired || (form.startDate && form.endDate));
-  const startWeeks = weeksByMonth(form.startYear);
-  const endWeeks = weeksByMonth(form.endYear);
-  const yearOptionsFor = (year) => (YEAR_OPTIONS.includes(year) ? YEAR_OPTIONS : [...YEAR_OPTIONS, year].sort());
-
-  // Changing a year swaps that side's week options out from under the
-  // current selection -- clear it rather than leave a stale date from the
-  // old year silently mismatched with what the dropdown displays. Start
-  // and end are independent, so an initiative can span two years (e.g.
-  // start Dec 2026, end Jan 2027).
-  const onStartYearChange = (e) => setForm((f) => ({ ...f, startYear: Number(e.target.value), startDate: "" }));
-  const onEndYearChange = (e) => setForm((f) => ({ ...f, endYear: Number(e.target.value), endDate: "" }));
+    form.impactedProducts.length > 0 &&
+    (!scheduleRequired || (form.startMonth && form.endMonth));
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -95,10 +74,13 @@ export default function InitiativeModal({ initiative, focusAreas, teams, onClose
             .split(",")
             .map((t) => t.trim())
             .filter(Boolean),
+          impactedProducts: form.impactedProducts,
           status: form.status,
           completed: form.status === "completed",
-          startDate: form.startDate || null,
-          endDate: form.endDate || null,
+          startYear: form.startMonth ? Number(form.startYear) : null,
+          startMonth: form.startMonth ? Number(form.startMonth) : null,
+          endYear: form.endMonth ? Number(form.endYear) : null,
+          endMonth: form.endMonth ? Number(form.endMonth) : null,
         },
         initiative?.id
       );
@@ -190,6 +172,15 @@ export default function InitiativeModal({ initiative, focusAreas, teams, onClose
             placeholder="e.g. Sales, Support"
             required
           />
+          <label className="lt-field">
+            <span className="lt-field__label">Impacted products *</span>
+            <MultiSelect
+              label="Products"
+              options={IMPACTED_PRODUCTS.map((p) => ({ value: p, label: p }))}
+              selected={form.impactedProducts}
+              onChange={(next) => setForm((f) => ({ ...f, impactedProducts: next }))}
+            />
+          </label>
 
           <Select label="Status *" value={form.status} onChange={upd("status")}>
             {STATUS_OPTIONS.map((s) => (
@@ -200,54 +191,46 @@ export default function InitiativeModal({ initiative, focusAreas, teams, onClose
           </Select>
 
           <div className="im-form__row">
-            <Select label="Start year" value={form.startYear} onChange={onStartYearChange}>
-              {yearOptionsFor(form.startYear).map((y) => (
+            <Select label="Start year" value={form.startYear} onChange={upd("startYear")}>
+              {YEAR_OPTIONS.map((y) => (
                 <option key={y} value={y}>
                   {y}
                 </option>
               ))}
             </Select>
             <Select
-              label={`Start week${scheduleRequired ? " *" : ""}`}
-              value={form.startDate}
-              onChange={upd("startDate")}
+              label={`Start month${scheduleRequired ? " *" : ""}`}
+              value={form.startMonth}
+              onChange={upd("startMonth")}
               required={scheduleRequired}
             >
               <option value="">Unscheduled</option>
-              {startWeeks.map((m) => (
-                <optgroup key={m.name} label={m.name}>
-                  {m.weeks.map((w) => (
-                    <option key={w.value} value={w.value}>
-                      {w.label}
-                    </option>
-                  ))}
-                </optgroup>
+              {MONTH_OPTIONS.map((m) => (
+                <option key={m.value} value={m.value}>
+                  {m.label}
+                </option>
               ))}
             </Select>
           </div>
           <div className="im-form__row">
-            <Select label="End year" value={form.endYear} onChange={onEndYearChange}>
-              {yearOptionsFor(form.endYear).map((y) => (
+            <Select label="End year" value={form.endYear} onChange={upd("endYear")}>
+              {YEAR_OPTIONS.map((y) => (
                 <option key={y} value={y}>
                   {y}
                 </option>
               ))}
             </Select>
             <Select
-              label={`End week${scheduleRequired ? " *" : ""}`}
-              value={form.endDate}
-              onChange={upd("endDate")}
+              label={`End month${scheduleRequired ? " *" : ""}`}
+              value={form.endMonth}
+              onChange={upd("endMonth")}
               required={scheduleRequired}
             >
               <option value="">Unscheduled</option>
-              {endWeeks.map((m) => (
-                <optgroup key={m.name} label={m.name}>
-                  {m.weeks.map((w) => (
-                    <option key={w.value} value={w.value}>
-                      {w.label}
-                    </option>
-                  ))}
-                </optgroup>
+              {MONTH_OPTIONS.map((m) => (
+                <option key={m.value} value={m.value}>
+                  {m.label}
+                </option>
               ))}
             </Select>
           </div>

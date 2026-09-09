@@ -21,19 +21,21 @@ export default function ManageTaxonomy({ focusAreas, teams, setFocusAreas, setTe
           items={focusAreas}
           setItems={setFocusAreas}
         />
-        <TaxonomyList title="Teams" endpoint="teams" items={teams} setItems={setTeams} />
+        <TaxonomyList title="Teams" endpoint="teams" items={teams} setItems={setTeams} withPm />
       </div>
     </>
   );
 }
 
-function TaxonomyList({ title, endpoint, items, setItems }) {
+function TaxonomyList({ title, endpoint, items, setItems, withPm = false }) {
   const guard = usePasswordGate();
   const [adding, setAdding] = useState(false);
   const [newName, setNewName] = useState("");
+  const [newPmName, setNewPmName] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [editName, setEditName] = useState("");
+  const [editPmName, setEditPmName] = useState("");
   const [busy, setBusy] = useState(false);
   const [confirmTarget, setConfirmTarget] = useState(null);
   const [error, setError] = useState("");
@@ -41,19 +43,21 @@ function TaxonomyList({ title, endpoint, items, setItems }) {
   const handleAdd = async (e) => {
     e.preventDefault();
     const name = newName.trim();
-    if (!name || submitting) return;
+    const pmName = newPmName.trim();
+    if (!name || (withPm && !pmName) || submitting) return;
     setSubmitting(true);
     setError("");
     try {
       const res = await fetch(`/api/${endpoint}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name }),
+        body: JSON.stringify(withPm ? { name, pmName } : { name }),
       });
       const j = await res.json();
       if (!res.ok || !j.ok) throw new Error(j.error || FRIENDLY_ERROR);
       setItems((prev) => [...prev, j.item]);
       setNewName("");
+      setNewPmName("");
       setAdding(false);
     } catch (err) {
       setError(err.message || FRIENDLY_ERROR);
@@ -66,19 +70,21 @@ function TaxonomyList({ title, endpoint, items, setItems }) {
     setError("");
     setEditingId(item.id);
     setEditName(item.name);
+    setEditPmName(item.pmName || "");
   };
 
   const saveEdit = async (e) => {
     e.preventDefault();
     const name = editName.trim();
-    if (!name || busy) return;
+    const pmName = editPmName.trim();
+    if (!name || (withPm && !pmName) || busy) return;
     setBusy(true);
     setError("");
     try {
       const res = await fetch(`/api/${endpoint}/${editingId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name }),
+        body: JSON.stringify(withPm ? { name, pmName } : { name }),
       });
       const j = await res.json();
       if (!res.ok || !j.ok) throw new Error(j.error || FRIENDLY_ERROR);
@@ -134,7 +140,21 @@ function TaxonomyList({ title, endpoint, items, setItems }) {
             autoFocus
             required
           />
-          <Button type="submit" size="sm" variant="accent" disabled={!newName.trim() || submitting}>
+          {withPm && (
+            <input
+              className="lt-input"
+              placeholder="Product Manager"
+              value={newPmName}
+              onChange={(e) => setNewPmName(e.target.value)}
+              required
+            />
+          )}
+          <Button
+            type="submit"
+            size="sm"
+            variant="accent"
+            disabled={!newName.trim() || (withPm && !newPmName.trim()) || submitting}
+          >
             Save
           </Button>
           <Button type="button" size="sm" variant="secondary" onClick={() => setAdding(false)}>
@@ -155,7 +175,21 @@ function TaxonomyList({ title, endpoint, items, setItems }) {
                   autoFocus
                   required
                 />
-                <button type="submit" className="lt-icon-btn" aria-label="Save" disabled={busy}>
+                {withPm && (
+                  <input
+                    className="lt-input"
+                    placeholder="Product Manager"
+                    value={editPmName}
+                    onChange={(e) => setEditPmName(e.target.value)}
+                    required
+                  />
+                )}
+                <button
+                  type="submit"
+                  className="lt-icon-btn"
+                  aria-label="Save"
+                  disabled={busy || !editName.trim() || (withPm && !editPmName.trim())}
+                >
                   <Icon name="checkmark" size={14} />
                 </button>
                 <button
@@ -170,7 +204,10 @@ function TaxonomyList({ title, endpoint, items, setItems }) {
             </li>
           ) : (
             <li key={item.id} className="tx-item">
-              <span className="tx-item__name">{item.name}</span>
+              <span className="tx-item__name">
+                {item.name}
+                {withPm && <span className="tx-item__pm">PM: {item.pmName || "—"}</span>}
+              </span>
               <button
                 type="button"
                 className="lt-icon-btn"
