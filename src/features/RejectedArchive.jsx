@@ -1,10 +1,12 @@
 import { Card, Badge, Button, IllustrationBadge } from "../components/ui/index.js";
 import { usePasswordGate } from "../lib/PasswordGate.jsx";
+import { InfoButton, useInitiativeTooltip } from "./InitiativeDetails.jsx";
 import "./ReviewQueue.css"; // reuses .rq-card__* (title/badges/desc/meta) and .rq-list
 import "./RejectedArchive.css";
 
 export default function RejectedArchive({ initiatives, onArchive }) {
   const guard = usePasswordGate();
+  const { show: showTooltip, hide: hideTooltip, portal: tooltipPortal } = useInitiativeTooltip();
   return (
     <>
       <p className="rb-intro">
@@ -23,7 +25,10 @@ export default function RejectedArchive({ initiatives, onArchive }) {
           {initiatives.map((i) => (
             <Card key={i.id} className="ra-card">
               <div className="rq-card__head">
-                <h3 className="rq-card__title">{i.title}</h3>
+                <div className="rq-card__titlewrap">
+                  <h3 className="rq-card__title">{i.title}</h3>
+                  <InfoButton item={i} show={showTooltip} hide={hideTooltip} />
+                </div>
                 <div className="rq-card__badges">
                   {i.focusArea && <Badge tone="brand">{i.focusArea}</Badge>}
                   {i.team && <Badge tone="neutral">{i.team}</Badge>}
@@ -53,6 +58,8 @@ export default function RejectedArchive({ initiatives, onArchive }) {
           ))}
         </div>
       )}
+
+      {tooltipPortal}
     </>
   );
 }

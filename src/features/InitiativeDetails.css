@@ -1,0 +1,103 @@
+/* Rich hover/click details card -- replaces the browser's native title
+   tooltip with every field on the initiative, shared across the Gantt,
+   Review queue, Rejected archive, and Archived page. Rendered through a
+   React portal into document.body (see InitiativeDetails.jsx) rather than
+   as a CSS-only :hover-revealed absolutely-positioned child: that approach
+   kept full layout size even while `visibility: hidden` (only
+   `display: none` removes an element from layout), so every row's dormant
+   ~70vh-tall tooltip was inflating the scroll container's scrollable area
+   by hundreds of pixels of invisible, unreachable space -- the root cause
+   of a "phantom whitespace" bug found while building the Gantt table.
+   Being in a portal, this needs nothing from its trigger's own
+   scroll/stacking context; position is plain `fixed` + JS-computed
+   coordinates. */
+.idet-tooltip {
+  position: fixed;
+  z-index: 1000;
+  width: 460px;
+  max-width: min(460px, 92vw);
+  /* No internal scroll -- pointer-events:none below means it could never
+     be scrolled anyway, which used to silently clip the bottom of long
+     content. Instead the whole card is capped to fit within the viewport
+     it's clamped into (see HoverTooltip in InitiativeDetails.jsx) and the
+     two-column fact grid below keeps the natural height short enough that
+     everything fits without hitting this cap in practice. */
+  max-height: calc(100vh - 24px);
+  overflow: hidden;
+  /* Purely informational, no controls inside -- must never intercept the
+     cursor. Without this, a tooltip that (after being clamped/flipped to
+     stay on-screen) ends up under the mouse steals hover from the row that
+     triggered it, which immediately hides the tooltip, which gives hover
+     back to the row, which shows it again -- a flicker loop. */
+  pointer-events: none;
+  background: var(--lt-white);
+  border: 1px solid var(--lt-color-border);
+  border-radius: var(--lt-radius-lg);
+  box-shadow: var(--lt-shadow-lg);
+  padding: var(--lt-space-3) var(--lt-space-4);
+  text-align: left;
+}
+.idet-tooltip__title {
+  font-family: var(--lt-font-display);
+  font-size: var(--lt-fs-md);
+  color: var(--lt-deep-blue);
+  margin-bottom: var(--lt-space-2);
+}
+/* Two columns for short facts (Team, Status, Submitted by, ...); facts
+   with long free text (Summary, Current/Future state, ...) span both
+   columns via .idet-fact--wide. Halving the height of the short facts is
+   what keeps the whole card short enough to fit on screen without
+   scrolling. */
+.idet-facts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: var(--lt-space-3);
+  row-gap: var(--lt-space-2);
+  margin: 0;
+}
+.idet-fact--wide {
+  grid-column: 1 / -1;
+}
+.idet-fact dt {
+  font-size: 10px;
+  font-weight: var(--lt-fw-black);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--lt-text-muted);
+  margin-bottom: 1px;
+}
+.idet-fact dd {
+  margin: 0;
+  font-size: var(--lt-fs-xs);
+  font-weight: var(--lt-fw-regular);
+  color: var(--lt-text-secondary);
+  line-height: 1.4;
+  white-space: normal;
+}
+
+/* Standalone "view details" affordance for card-style rows (Review queue,
+   Rejected, Archived) -- same circled-i language as the Gantt's own
+   .rg-labelcell__info, sized for sitting next to a card title instead of
+   inline in a table row. */
+.idet-infobtn {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid var(--lt-color-border);
+  border-radius: 50%;
+  background: var(--lt-white);
+  color: var(--lt-text-muted);
+  font-size: 13px;
+  font-style: italic;
+  font-family: Georgia, serif;
+  cursor: help;
+  flex: 0 0 auto;
+}
+.idet-infobtn:hover,
+.idet-infobtn:focus-visible {
+  background: var(--lt-blue-lighten-4);
+  border-color: var(--lt-blue-lighten-2);
+  color: var(--lt-blue);
+}

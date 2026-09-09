@@ -1,12 +1,14 @@
 import { useMemo, useState } from "react";
 import { Card, Badge, Button, Modal, Input, IllustrationBadge } from "../components/ui/index.js";
 import { usePasswordGate } from "../lib/PasswordGate.jsx";
+import { InfoButton, useInitiativeTooltip } from "./InitiativeDetails.jsx";
 import "./ReviewQueue.css";
 
 const FRIENDLY_ERROR = "Something went wrong. Please try again.";
 
 export default function ReviewQueue({ initiatives, teams, onUpsert, onArchive }) {
   const guard = usePasswordGate();
+  const { show: showTooltip, hide: hideTooltip, portal: tooltipPortal } = useInitiativeTooltip();
   const [rejecting, setRejecting] = useState(null); // initiative pending rejection notes
   const [notes, setNotes] = useState("");
   const [reviewedBy, setReviewedBy] = useState("");
@@ -83,7 +85,10 @@ export default function ReviewQueue({ initiatives, teams, onUpsert, onArchive })
               {items.map((i) => (
                 <Card key={i.id} className="rq-card">
                   <div className="rq-card__head">
-                    <h3 className="rq-card__title">{i.title}</h3>
+                    <div className="rq-card__titlewrap">
+                      <h3 className="rq-card__title">{i.title}</h3>
+                      <InfoButton item={i} show={showTooltip} hide={hideTooltip} />
+                    </div>
                     <div className="rq-card__badges">
                       {i.focusArea && <Badge tone="brand">{i.focusArea}</Badge>}
                     </div>
@@ -165,6 +170,8 @@ export default function ReviewQueue({ initiatives, teams, onUpsert, onArchive })
           </div>
         </Modal>
       )}
+
+      {tooltipPortal}
     </>
   );
 }

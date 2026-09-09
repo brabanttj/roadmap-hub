@@ -1,8 +1,8 @@
-import { Fragment, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { createPortal } from "react-dom";
+import { Fragment, useMemo, useRef, useState } from "react";
 import { Card, Input, Select, MultiSelect, Button, IllustrationBadge } from "../components/ui/index.js";
 import { usePasswordGate } from "../lib/PasswordGate.jsx";
 import { MONTH_NAMES, STATUS_LABEL } from "../lib/text.js";
+import { useInitiativeTooltip } from "./InitiativeDetails.jsx";
 import InitiativeModal from "./InitiativeModal.jsx";
 import "./RoadmapGantt.css";
 
@@ -37,37 +37,6 @@ const HEAD_ROW_H = 34;
 const BODY_ROW_H = 44;
 
 const monthIndex = (year, month) => year * 12 + (month - 1);
-
-// Every field on an initiative, for the hover card -- so a reviewer never
-// has to open the edit modal just to read something.
-function initiativeFacts(item) {
-  const fmtDate = (v) => (v ? new Date(v).toLocaleDateString() : "—");
-  const schedule =
-    item.startMonth && item.endMonth
-      ? `${MONTH_NAMES[item.startMonth - 1]} ${item.startYear} – ${MONTH_NAMES[item.endMonth - 1]} ${item.endYear}`
-      : "Unscheduled (Backlog)";
-  // `wide: true` facts always take the full row (long free text); the rest
-  // pair up two-per-row so the whole card stays short enough to fit on
-  // screen without needing to scroll -- see .rg-tooltip__facts.
-  return [
-    { label: "Team", value: item.team || "—" },
-    { label: "Focus area", value: item.focusArea || "—" },
-    { label: "Status", value: STATUS_LABEL[item.status] },
-    { label: "Completed", value: item.completed ? "Yes" : "No" },
-    { label: "Schedule", value: schedule, wide: true },
-    { label: "Summary", value: item.summary || "—", wide: true },
-    { label: "Current state", value: item.currentState || "—", wide: true },
-    { label: "Future state", value: item.futureState || "—", wide: true },
-    { label: "Success metrics", value: item.successMetrics || "—", wide: true },
-    { label: "Impacted teams", value: item.impactedTeams?.length ? item.impactedTeams.join(", ") : "—" },
-    { label: "Impacted products", value: item.impactedProducts?.length ? item.impactedProducts.join(", ") : "—" },
-    { label: "Submitted by", value: item.submittedBy || "—" },
-    { label: "Submitted", value: fmtDate(item.submittedAt) },
-    { label: "Reviewed by", value: item.reviewedBy || "—" },
-    { label: "Reviewed", value: fmtDate(item.reviewedAt) },
-    { label: "Reviewer notes", value: item.reviewerNotes || "—", wide: true },
-  ];
-}
 
 // Counts by status, used for the colored count pills next to "Initiative"
 // and next to each team/focus-area group band.
@@ -121,7 +90,7 @@ export default function RoadmapGantt({ initiatives, focusAreas, teams, onUpsert,
   const [sortMode, setSortMode] = useState("priority"); // "priority" | "startDate" -- see `rows` below
   const [filtersOpen, setFiltersOpen] = useState(true);
   const [editing, setEditing] = useState(null); // { initiative } | { isNew: true } | null
-  const [hover, setHover] = useState(null); // { item, rect } | null -- drives the portal tooltip
+  const { show: showTooltip, hide: hideTooltip, portal: tooltipPortal } = useInitiativeTooltip();
   const [scrollTop, setScrollTop] = useState(0); // drives which group's sticky band is shown
   const [dragOverId, setDragOverId] = useState(null); // item id currently being dragged over -- drop-target highlight
 
@@ -135,7 +104,7 @@ export default function RoadmapGantt({ initiatives, focusAreas, teams, onUpsert,
     syncingRef.current = true;
     if (sidebarRef.current) sidebarRef.current.scrollTop = e.currentTarget.scrollTop;
     syncingRef.current = false;
-    setHover(null);
+    hideTooltip();
   };
   const onSidebarScroll = (e) => {
     setScrollTop(e.currentTarget.scrollTop);
@@ -143,7 +112,7 @@ export default function RoadmapGantt({ initiatives, focusAreas, teams, onUpsert,
     syncingRef.current = true;
     if (hscrollRef.current) hscrollRef.current.scrollTop = e.currentTarget.scrollTop;
     syncingRef.current = false;
-    setHover(null);
+    hideTooltip();
   };
 
   const teamOrder = teams.map((t) => t.name);
@@ -468,7 +437,8 @@ export default function RoadmapGantt({ initiatives, focusAreas, teams, onUpsert,
                   secondaryField={secondaryField}
                   guard={guard}
                   setEditing={setEditing}
-                  onHover={setHover}
+                  showTooltip={showTooltip}
+                  hideTooltip={hideTooltip}
                   reorderable={reorderable}
                   dragIdRef={dragIdRef}
                   dragOverId={dragOverId}
@@ -540,50 +510,8 @@ export default function RoadmapGantt({ initiatives, focusAreas, teams, onUpsert,
         />
       )}
 
-      {hover && createPortal(<HoverTooltip item={hover.item} anchorRect={hover.rect} />, document.body)}
+      {tooltipPortal}
     </>
-  );
-}
-
-// Positioned in two passes: first rendered off-screen-safe at its naive
-// anchor position so it can be measured, then clamped to stay fully inside
-// the viewport (flipping above the anchor, and/or sliding left) instead of
-// running off the right/bottom edge, which is unreadable.
-function HoverTooltip({ item, anchorRect }) {
-  const ref = useRef(null);
-  const [style, setStyle] = useState({ top: anchorRect.bottom + 6, left: anchorRect.left, visibility: "hidden" });
-
-  useLayoutEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const margin = 12;
-    const rect = el.getBoundingClientRect();
-    let left = anchorRect.left;
-    if (left + rect.width > window.innerWidth - margin) {
-      left = window.innerWidth - margin - rect.width;
-    }
-    if (left < margin) left = margin;
-
-    let top = anchorRect.bottom + 6;
-    if (top + rect.height > window.innerHeight - margin) {
-      const above = anchorRect.top - 6 - rect.height;
-      top = above >= margin ? above : Math.max(margin, window.innerHeight - margin - rect.height);
-    }
-    setStyle({ top, left, visibility: "visible" });
-  }, [item, anchorRect]);
-
-  return (
-    <div ref={ref} className="rg-tooltip rg-tooltip--portal" role="tooltip" style={style}>
-      <div className="rg-tooltip__title">{item.title}</div>
-      <dl className="rg-tooltip__facts">
-        {initiativeFacts(item).map((f) => (
-          <div className={`rg-tooltip__fact${f.wide ? " rg-tooltip__fact--wide" : ""}`} key={f.label}>
-            <dt>{f.label}</dt>
-            <dd>{f.value}</dd>
-          </div>
-        ))}
-      </dl>
-    </div>
   );
 }
 
@@ -593,7 +521,8 @@ function SidebarRow({
   secondaryField,
   guard,
   setEditing,
-  onHover,
+  showTooltip,
+  hideTooltip,
   reorderable,
   dragIdRef,
   dragOverId,
@@ -611,8 +540,6 @@ function SidebarRow({
 
   const item = row.item;
   const onEdit = () => guard(() => setEditing({ initiative: item }))();
-  const showTooltip = (e) => onHover({ item, rect: e.currentTarget.getBoundingClientRect() });
-  const hideTooltip = () => onHover(null);
   // Completed initiatives are never manually prioritized (see `rows` in
   // RoadmapGantt) -- only Backlog/In Development rows can be dragged.
   const canDrag = reorderable && item.status !== "completed";
@@ -675,11 +602,11 @@ function SidebarRow({
           className="rg-labelcell__info"
           aria-label={`View details: ${item.title}`}
           title="View details"
-          onMouseEnter={showTooltip}
+          onMouseEnter={showTooltip(item)}
           onMouseLeave={hideTooltip}
-          onFocus={showTooltip}
+          onFocus={showTooltip(item)}
           onBlur={hideTooltip}
-          onClick={showTooltip}
+          onClick={showTooltip(item)}
         >
           ⓘ
         </button>

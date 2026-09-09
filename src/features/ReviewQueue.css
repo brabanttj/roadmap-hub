@@ -26,11 +26,20 @@
   gap: var(--lt-space-3);
   margin-bottom: var(--lt-space-2);
 }
+.rq-card__titlewrap {
+  display: flex;
+  align-items: center;
+  gap: var(--lt-space-2);
+  flex: 1;
+  min-width: 0;
+}
 .rq-card__title {
   font-family: var(--lt-font-display);
   font-size: var(--lt-fs-md);
   color: var(--lt-deep-blue);
   margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .rq-card__badges {
   display: flex;
