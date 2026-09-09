@@ -114,13 +114,16 @@ export default function RoadmapGantt({ initiatives, focusAreas, teams, onUpsert,
   const [statusFilter, setStatusFilter] = useState([]); // [] = all
   const [columnFilter, setColumnFilter] = useState([]); // [] = current year's months + backlog
   const [groupBy, setGroupBy] = useState("team"); // "team" | "focusArea"
+  const [filtersOpen, setFiltersOpen] = useState(true);
   const [editing, setEditing] = useState(null); // { initiative } | { isNew: true } | null
   const [hover, setHover] = useState(null); // { item, rect } | null -- drives the portal tooltip
+  const [scrollTop, setScrollTop] = useState(0); // drives which group's sticky band is shown
 
   const sidebarRef = useRef(null);
   const hscrollRef = useRef(null);
   const syncingRef = useRef(false);
   const onHscrollScroll = (e) => {
+    setScrollTop(e.currentTarget.scrollTop);
     if (syncingRef.current) return;
     syncingRef.current = true;
     if (sidebarRef.current) sidebarRef.current.scrollTop = e.currentTarget.scrollTop;
@@ -128,6 +131,7 @@ export default function RoadmapGantt({ initiatives, focusAreas, teams, onUpsert,
     setHover(null);
   };
   const onSidebarScroll = (e) => {
+    setScrollTop(e.currentTarget.scrollTop);
     if (syncingRef.current) return;
     syncingRef.current = true;
     if (hscrollRef.current) hscrollRef.current.scrollTop = e.currentTarget.scrollTop;
@@ -272,9 +276,36 @@ export default function RoadmapGantt({ initiatives, focusAreas, teams, onUpsert,
   const rowsTemplate = `${HEAD_ROW_H}px ${HEAD_ROW_H}px repeat(${bodyRowCount}, ${BODY_ROW_H}px)`;
   const lastRowLine = bodyRowCount + 3;
 
+  // Which group band should be floating, pinned just under the column
+  // headers -- the last group whose own row has scrolled up underneath
+  // that pin point. It stays put until the next group's row reaches the
+  // same point and takes over, the same way section headers work in a
+  // grouped list.
+  const groupAnchors = useMemo(() => rows.filter((r) => r.type === "group").map((r, i) => ({ row: r, idx: rows.indexOf(r) })), [rows]);
+  const activeGroup = useMemo(() => {
+    let current = null;
+    for (const a of groupAnchors) {
+      if (a.idx * BODY_ROW_H <= scrollTop) current = a;
+      else break;
+    }
+    return current;
+  }, [groupAnchors, scrollTop]);
+
   return (
     <>
       <Card className="cf-toolbar">
+        <div className="rg-toolbar__head">
+          <button
+            type="button"
+            className="rg-toolbar__toggle"
+            onClick={() => setFiltersOpen((v) => !v)}
+            aria-expanded={filtersOpen}
+          >
+            <span aria-hidden="true">{filtersOpen ? "▾" : "▸"}</span>
+            Filters
+          </button>
+        </div>
+        {filtersOpen && (
         <div className="rg-toolbar__grid">
           <Input
             search
@@ -315,6 +346,7 @@ export default function RoadmapGantt({ initiatives, focusAreas, teams, onUpsert,
             + Add initiative
           </Button>
         </div>
+        )}
       </Card>
 
       {rows.length === 0 || activeColumns.length === 0 ? (
@@ -355,6 +387,15 @@ export default function RoadmapGantt({ initiatives, focusAreas, teams, onUpsert,
               {rows.map((r, idx) => (
                 <SidebarRow key={r.key} row={r} gridRow={idx + 3} secondaryField={secondaryField} guard={guard} setEditing={setEditing} onHover={setHover} />
               ))}
+              {activeGroup && (
+                <div
+                  className="rg-teamband rg-teamband--sticky"
+                  style={{ gridRow: `3 / ${lastRowLine}`, gridColumn: "1 / -1", alignSelf: "start", top: HEAD_ROW_H * 2 }}
+                >
+                  <span className="rg-teamband__name">{activeGroup.row.label}</span>
+                  <StatusCounts counts={activeGroup.row.counts} total={activeGroup.row.count} />
+                </div>
+              )}
             </div>
           </div>
 
@@ -396,6 +437,12 @@ export default function RoadmapGantt({ initiatives, focusAreas, teams, onUpsert,
               {rows.map((r, idx) => (
                 <DateRow key={r.key} row={r} gridRow={idx + 3} activeColumns={activeColumns} guard={guard} setEditing={setEditing} />
               ))}
+              {activeGroup && (
+                <div
+                  className="rg-teamband rg-teamband--filler rg-teamband--sticky"
+                  style={{ gridRow: `3 / ${lastRowLine}`, gridColumn: "1 / -1", alignSelf: "start", top: HEAD_ROW_H * 2 }}
+                />
+              )}
             </div>
           </div>
         </div>

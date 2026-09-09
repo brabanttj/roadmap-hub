@@ -9,6 +9,27 @@
   --rg-status-completed: var(--lt-deep-blue);
 }
 
+.rg-toolbar__head {
+  display: flex;
+}
+.rg-toolbar__toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--lt-space-2);
+  border: none;
+  background: none;
+  padding: 0;
+  margin-bottom: var(--lt-space-3);
+  font-family: var(--lt-font-body);
+  font-size: var(--lt-fs-sm);
+  font-weight: var(--lt-fw-bold);
+  color: var(--lt-text-secondary);
+  cursor: pointer;
+}
+.rg-toolbar__toggle:hover {
+  color: var(--lt-blue);
+}
+
 .rg-toolbar__grid {
   display: flex;
   flex-wrap: wrap;
@@ -218,6 +239,17 @@
   background: var(--lt-green);
   border-top: 1px solid var(--lt-color-border);
   border-bottom: 1px solid var(--lt-color-border);
+}
+/* Floating duplicate of whichever group band the user has scrolled past --
+   pinned just under the column headers so the current team/focus-area
+   name is always visible, handed off to the next group's band once that
+   one scrolls up to the same spot (see RoadmapGantt.jsx's `activeGroup`). */
+.rg-teamband--sticky {
+  position: sticky;
+  top: 0; /* overridden inline to HEAD_ROW_H * 2 */
+  z-index: 5;
+  height: 44px;
+  box-shadow: 0 1px 2px rgba(16, 31, 48, 0.12);
 }
 
 /* ---- Initiative rows ---------------------------------------------------- */
