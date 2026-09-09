@@ -252,57 +252,99 @@
 }
 
 /* ---- Initiative rows ---------------------------------------------------- */
+/* Three distinct controls live in this row -- a drag handle, an info
+   button (view details), and the title itself (click to edit) -- instead
+   of one element that was simultaneously all three and hard to predict.
+   The row itself is a plain flex container now, not a button. */
 .rg-labelcell {
   display: flex;
   align-items: center;
-  gap: var(--lt-space-2);
+  gap: var(--lt-space-1);
   width: 100%;
-  text-align: left;
-  padding: 0 var(--lt-space-4);
-  border: none;
+  padding: 0 var(--lt-space-2) 0 var(--lt-space-3);
   border-bottom: 1px solid var(--lt-color-border);
   background: var(--lt-white);
-  color: var(--lt-text);
   font-family: var(--lt-font-body);
   font-size: var(--lt-fs-sm);
   font-weight: var(--lt-fw-bold);
-  cursor: pointer;
-}
-.rg-labelcell:hover,
-.rg-labelcell:focus-visible {
-  background: var(--lt-blue-lighten-4);
-  color: var(--lt-blue);
 }
 /* Name color mirrors the bar/status-pill colors, so scanning the name
    column alone tells you a row's status. */
-.rg-labelcell--backlog {
+.rg-labelcell--backlog .rg-labelcell__titlebtn {
   color: var(--rg-status-backlog);
 }
-.rg-labelcell--in_development {
+.rg-labelcell--in_development .rg-labelcell__titlebtn {
   color: var(--rg-status-in_development);
 }
-.rg-labelcell--completed {
+.rg-labelcell--completed .rg-labelcell__titlebtn {
   color: var(--rg-status-completed);
 }
-.rg-labelcell__text {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-/* Drag-to-reorder within a team group (see RoadmapGantt.jsx's
-   `reorderable`) -- a small grip glyph so it reads as a handle, and a
-   dashed top border on whichever row the dragged item is currently over,
-   showing where it'll land on drop. */
+/* Drag handle -- grab cursor, and a blue top border on whichever row the
+   dragged item is currently over, showing exactly where it'll land. */
 .rg-labelcell__handle {
   flex: 0 0 auto;
   color: var(--lt-gray-300);
   cursor: grab;
   line-height: 1;
+  padding: var(--lt-space-1);
+}
+.rg-labelcell__handle:active {
+  cursor: grabbing;
 }
 .rg-labelcell--dragover {
   box-shadow: inset 0 2px 0 0 var(--lt-blue);
+}
+/* Info button -- hover or click to preview every field without editing
+   anything; a distinct circled-i target instead of the whole row reacting
+   to hover, which used to make "I want details" and "I'm about to drag"
+   indistinguishable. */
+.rg-labelcell__info {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: none;
+  color: var(--lt-gray-300);
+  font-size: 12px;
+  font-style: italic;
+  font-family: Georgia, serif;
+  cursor: help;
+}
+.rg-labelcell__info:hover,
+.rg-labelcell__info:focus-visible {
+  background: var(--lt-blue-lighten-4);
+  color: var(--lt-blue);
+}
+/* Title -- the only click-to-edit target, with an underline-on-hover so
+   it visibly reads as "this text is a link to edit", not just a label. */
+.rg-labelcell__titlebtn {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+  padding: var(--lt-space-1) 0;
+  border: none;
+  background: none;
+  color: var(--lt-text);
+  font: inherit;
+  cursor: pointer;
+}
+.rg-labelcell__titlebtn:hover,
+.rg-labelcell__titlebtn:focus-visible {
+  color: var(--lt-blue);
+}
+.rg-labelcell__titlebtn:hover .rg-labelcell__text,
+.rg-labelcell__titlebtn:focus-visible .rg-labelcell__text {
+  text-decoration: underline;
+}
+.rg-labelcell__text {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* Focus Area / Team column -- plain text instead of a color code. */

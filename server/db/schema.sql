@@ -58,7 +58,15 @@ CREATE TABLE IF NOT EXISTS initiatives (
   reviewed_by        TEXT NOT NULL DEFAULT '',
   reviewed_at        TIMESTAMPTZ,
   reviewer_notes     TEXT NOT NULL DEFAULT '',
-  sort_order         INT NOT NULL DEFAULT 0
+  sort_order         INT NOT NULL DEFAULT 0,
+  -- Archiving is independent of `status` -- any initiative (idea, backlog,
+  -- in development, completed, even rejected) can be archived without
+  -- losing or changing its status, and archived items are hidden from
+  -- every other view (Roadmap, Review queue, Rejected) but still visible
+  -- on the dedicated Archived page, with a password-gated Unarchive.
+  archived           BOOLEAN NOT NULL DEFAULT FALSE,
+  archived_by        TEXT NOT NULL DEFAULT '',
+  archived_at        TIMESTAMPTZ
 );
 CREATE INDEX IF NOT EXISTS initiatives_status_idx ON initiatives (status);
 
@@ -71,3 +79,6 @@ ALTER TABLE initiatives ADD COLUMN IF NOT EXISTS start_month INT CHECK (start_mo
 ALTER TABLE initiatives ADD COLUMN IF NOT EXISTS end_year INT;
 ALTER TABLE initiatives ADD COLUMN IF NOT EXISTS end_month INT CHECK (end_month BETWEEN 1 AND 12);
 ALTER TABLE initiatives ADD COLUMN IF NOT EXISTS impacted_products TEXT[] NOT NULL DEFAULT '{}';
+ALTER TABLE initiatives ADD COLUMN IF NOT EXISTS archived BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE initiatives ADD COLUMN IF NOT EXISTS archived_by TEXT NOT NULL DEFAULT '';
+ALTER TABLE initiatives ADD COLUMN IF NOT EXISTS archived_at TIMESTAMPTZ;

@@ -4,6 +4,7 @@ import RoadmapGantt from "./RoadmapGantt.jsx";
 import IdeaForm from "./IdeaForm.jsx";
 import ReviewQueue from "./ReviewQueue.jsx";
 import RejectedArchive from "./RejectedArchive.jsx";
+import ArchivedArchive from "./ArchivedArchive.jsx";
 import ManageTaxonomy from "./ManageTaxonomy.jsx";
 import "./RoadmapPlanner.css";
 
@@ -79,8 +80,20 @@ export default function RoadmapPlanner() {
     });
   };
 
-  const ideaCount = initiatives.filter((i) => i.status === "idea").length;
-  const rejectedCount = initiatives.filter((i) => i.status === "rejected").length;
+  const archiveInitiative = async (id, archived = true) => {
+    const res = await fetch(`/api/initiatives/${id}/archive`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ archived }),
+    });
+    const j = await res.json();
+    if (!res.ok || !j.ok) throw new Error(j.error || FRIENDLY_ERROR);
+    upsertInitiative(j.initiative);
+  };
+
+  const ideaCount = initiatives.filter((i) => i.status === "idea" && !i.archived).length;
+  const rejectedCount = initiatives.filter((i) => i.status === "rejected" && !i.archived).length;
+  const archivedCount = initiatives.filter((i) => i.archived).length;
 
   if (loading) {
     return (
@@ -152,6 +165,15 @@ export default function RoadmapPlanner() {
         <button
           type="button"
           role="tab"
+          aria-selected={view === "archived"}
+          className={`cf-tab${view === "archived" ? " cf-tab--on" : ""}`}
+          onClick={() => setView("archived")}
+        >
+          Archived <span className="cf-tab__n">{archivedCount}</span>
+        </button>
+        <button
+          type="button"
+          role="tab"
           aria-selected={view === "taxonomy"}
           className={`cf-tab${view === "taxonomy" ? " cf-tab--on" : ""}`}
           onClick={() => setView("taxonomy")}
@@ -175,13 +197,23 @@ export default function RoadmapPlanner() {
       )}
       {view === "review" && (
         <ReviewQueue
-          initiatives={initiatives.filter((i) => i.status === "idea")}
+          initiatives={initiatives.filter((i) => i.status === "idea" && !i.archived)}
           teams={teams}
           onUpsert={upsertInitiative}
+          onArchive={archiveInitiative}
         />
       )}
       {view === "rejected" && (
-        <RejectedArchive initiatives={initiatives.filter((i) => i.status === "rejected")} />
+        <RejectedArchive
+          initiatives={initiatives.filter((i) => i.status === "rejected" && !i.archived)}
+          onArchive={archiveInitiative}
+        />
+      )}
+      {view === "archived" && (
+        <ArchivedArchive
+          initiatives={initiatives.filter((i) => i.archived)}
+          onUnarchive={(id) => archiveInitiative(id, false)}
+        />
       )}
       {view === "taxonomy" && (
         <ManageTaxonomy

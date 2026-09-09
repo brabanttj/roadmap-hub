@@ -17,7 +17,9 @@ const INITIATIVE_COLUMNS = `
   end_year AS "endYear", end_month AS "endMonth",
   submitted_by AS "submittedBy", submitted_at AS "submittedAt",
   reviewed_by AS "reviewedBy", reviewed_at AS "reviewedAt",
-  reviewer_notes AS "reviewerNotes", sort_order AS "sortOrder"
+  reviewer_notes AS "reviewerNotes", sort_order AS "sortOrder",
+  archived, archived_by AS "archivedBy",
+  to_char(archived_at, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS "archivedAt"
 `;
 
 // Month granularity, no week detail. A year/month pair is either both
@@ -259,6 +261,31 @@ router.put("/initiatives/:id", async (req, res) => {
         toMonthOrNull(b.endMonth),
         id,
       ]
+    );
+    if (!rows.length) return res.status(404).json({ ok: false, error: "Initiative not found" });
+    res.json({ ok: true, initiative: rows[0] });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ ok: false, error: String(e.message || e) });
+  }
+});
+
+// ---- POST /api/initiatives/:id/archive ---------------------------------------
+// Archiving is independent of status -- any initiative, in any state, can
+// be archived/unarchived without touching its status. Client-side
+// password-gated the same as every other mutation here.
+router.post("/initiatives/:id/archive", async (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id)) return res.status(400).json({ ok: false, error: "Invalid id" });
+  const archived = Boolean(req.body?.archived);
+  const archivedBy = String(req.body?.archivedBy || "").trim();
+  try {
+    const { rows } = await pool.query(
+      `UPDATE initiatives
+       SET archived = $1, archived_by = $2, archived_at = ${archived ? "now()" : "NULL"}
+       WHERE id = $3
+       RETURNING ${INITIATIVE_COLUMNS}`,
+      [archived, archived ? archivedBy : "", id]
     );
     if (!rows.length) return res.status(404).json({ ok: false, error: "Initiative not found" });
     res.json({ ok: true, initiative: rows[0] });

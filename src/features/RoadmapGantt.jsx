@@ -199,6 +199,7 @@ export default function RoadmapGantt({ initiatives, focusAreas, teams, onUpsert,
   const visible = useMemo(() => {
     const q = search.trim().toLowerCase();
     return initiatives.filter((i) => {
+      if (i.archived) return false;
       if (!VISIBLE_STATUSES.includes(i.status)) return false;
       if (statusFilter.length && !statusFilter.includes(i.status)) return false;
       if (focusAreaFilter.length && !focusAreaFilter.includes(i.focusArea)) return false;
@@ -273,6 +274,17 @@ export default function RoadmapGantt({ initiatives, focusAreas, teams, onUpsert,
     const j = await res.json();
     if (!res.ok || !j.ok) throw new Error(j.error || "Something went wrong. Please try again.");
     onRemove(id);
+  };
+
+  const archive = async (id) => {
+    const res = await fetch(`/api/initiatives/${id}/archive`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ archived: true }),
+    });
+    const j = await res.json();
+    if (!res.ok || !j.ok) throw new Error(j.error || "Something went wrong. Please try again.");
+    onUpsert(j.initiative);
   };
 
   // Only reorderable when grouped by Team, sorting by priority (dragging
@@ -524,6 +536,7 @@ export default function RoadmapGantt({ initiatives, focusAreas, teams, onUpsert,
           onClose={() => setEditing(null)}
           onSave={save}
           onDelete={remove}
+          onArchive={archive}
         />
       )}
 
@@ -631,31 +644,49 @@ function SidebarRow({
     setDragOverId(null);
   };
 
+  // Three separate, clearly distinct controls instead of one row that was
+  // simultaneously the drag source, the hover-for-details trigger, and the
+  // click-to-edit target -- which made it hard to tell which action you
+  // were about to take. Drop handling stays on the row itself so the whole
+  // row's width is a valid drop target, not just the handle.
   return (
     <Fragment>
-      <button
-        type="button"
+      <div
         className={`rg-labelcell rg-labelcell--${item.status}${dragOverId === item.id ? " rg-labelcell--dragover" : ""}`}
         style={{ gridRow, gridColumn: 1 }}
-        onClick={onEdit}
-        onMouseEnter={showTooltip}
-        onMouseLeave={hideTooltip}
-        onFocus={showTooltip}
-        onBlur={hideTooltip}
-        draggable={canDrag}
-        onDragStart={canDrag ? onDragStart : undefined}
         onDragOver={canDrag ? onDragOver : undefined}
         onDragLeave={canDrag ? onDragLeave : undefined}
         onDrop={canDrag ? onDrop : undefined}
-        onDragEnd={canDrag ? onDragEnd : undefined}
       >
         {canDrag && (
-          <span className="rg-labelcell__handle" aria-hidden="true" title="Drag to reorder">
+          <span
+            className="rg-labelcell__handle"
+            aria-hidden="true"
+            title="Drag to reprioritize"
+            draggable
+            onDragStart={onDragStart}
+            onDragEnd={onDragEnd}
+          >
             ⠿
           </span>
         )}
-        <span className="rg-labelcell__text">{item.title}</span>
-      </button>
+        <button
+          type="button"
+          className="rg-labelcell__info"
+          aria-label={`View details: ${item.title}`}
+          title="View details"
+          onMouseEnter={showTooltip}
+          onMouseLeave={hideTooltip}
+          onFocus={showTooltip}
+          onBlur={hideTooltip}
+          onClick={showTooltip}
+        >
+          ⓘ
+        </button>
+        <button type="button" className="rg-labelcell__titlebtn" onClick={onEdit} title="Click to edit">
+          <span className="rg-labelcell__text">{item.title}</span>
+        </button>
+      </div>
       <div className="rg-focuscell" style={{ gridRow, gridColumn: 2 }}>
         {item[secondaryField] || "—"}
       </div>

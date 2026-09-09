@@ -5,7 +5,7 @@ import "./ReviewQueue.css";
 
 const FRIENDLY_ERROR = "Something went wrong. Please try again.";
 
-export default function ReviewQueue({ initiatives, teams, onUpsert }) {
+export default function ReviewQueue({ initiatives, teams, onUpsert, onArchive }) {
   const guard = usePasswordGate();
   const [rejecting, setRejecting] = useState(null); // initiative pending rejection notes
   const [notes, setNotes] = useState("");
@@ -96,6 +96,14 @@ export default function ReviewQueue({ initiatives, teams, onUpsert }) {
                     )}
                   </div>
                   <div className="rq-card__actions">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      disabled={busyId === i.id}
+                      onClick={guard(() => onArchive(i.id))}
+                    >
+                      Archive
+                    </Button>
                     <Button
                       variant="secondary"
                       size="sm"

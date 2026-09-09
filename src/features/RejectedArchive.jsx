@@ -1,8 +1,10 @@
-import { Card, Badge, IllustrationBadge } from "../components/ui/index.js";
+import { Card, Badge, Button, IllustrationBadge } from "../components/ui/index.js";
+import { usePasswordGate } from "../lib/PasswordGate.jsx";
 import "./ReviewQueue.css"; // reuses .rq-card__* (title/badges/desc/meta) and .rq-list
 import "./RejectedArchive.css";
 
-export default function RejectedArchive({ initiatives }) {
+export default function RejectedArchive({ initiatives, onArchive }) {
+  const guard = usePasswordGate();
   return (
     <>
       <p className="rb-intro">
@@ -41,6 +43,11 @@ export default function RejectedArchive({ initiatives }) {
                     {i.reviewedAt && `, ${new Date(i.reviewedAt).toLocaleDateString()}`}
                   </span>
                 )}
+              </div>
+              <div className="rq-card__actions">
+                <Button variant="ghost" size="sm" onClick={guard(() => onArchive(i.id))}>
+                  Archive
+                </Button>
               </div>
             </Card>
           ))}

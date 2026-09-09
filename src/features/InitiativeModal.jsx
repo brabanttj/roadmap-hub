@@ -32,10 +32,11 @@ function toFormState(initiative, focusAreas, teams) {
   };
 }
 
-export default function InitiativeModal({ initiative, focusAreas, teams, onClose, onSave, onDelete }) {
+export default function InitiativeModal({ initiative, focusAreas, teams, onClose, onSave, onDelete, onArchive }) {
   const [form, setForm] = useState(() => toFormState(initiative, focusAreas, teams));
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [archiving, setArchiving] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [error, setError] = useState("");
 
@@ -89,6 +90,19 @@ export default function InitiativeModal({ initiative, focusAreas, teams, onClose
       setError(err.message || FRIENDLY_ERROR);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleArchive = async () => {
+    setArchiving(true);
+    setError("");
+    try {
+      await onArchive(initiative.id);
+      onClose();
+    } catch (err) {
+      setError(err.message || FRIENDLY_ERROR);
+    } finally {
+      setArchiving(false);
     }
   };
 
@@ -237,9 +251,14 @@ export default function InitiativeModal({ initiative, focusAreas, teams, onClose
 
           <div className="im-form__actions">
             {initiative && (
-              <Button type="button" variant="danger" onClick={() => setConfirmDelete(true)} disabled={saving}>
-                Remove
-              </Button>
+              <div className="im-form__actions-left">
+                <Button type="button" variant="danger" onClick={() => setConfirmDelete(true)} disabled={saving}>
+                  Remove
+                </Button>
+                <Button type="button" variant="secondary" onClick={handleArchive} disabled={saving || archiving}>
+                  {archiving ? "Archiving…" : "Archive"}
+                </Button>
+              </div>
             )}
             <div className="im-form__actions-right">
               <Button type="button" variant="secondary" onClick={onClose}>

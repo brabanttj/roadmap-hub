@@ -16,7 +16,8 @@
   padding-top: var(--lt-space-4);
   border-top: 1px solid var(--lt-color-border);
 }
-.im-form__actions-right {
+.im-form__actions-right,
+.im-form__actions-left {
   display: flex;
   gap: var(--lt-space-2);
 }
