@@ -5,7 +5,7 @@
    the brighter green reads too low-contrast/washed-out at small sizes. */
 :root {
   --rg-status-backlog: var(--lt-red);
-  --rg-status-in_development: var(--lt-green-darken-2);
+  --rg-status-in_development: var(--lt-teal);
   --rg-status-completed: var(--lt-deep-blue);
 }
 
@@ -177,8 +177,8 @@
   color: var(--lt-text-secondary);
 }
 .rg-headcell--now {
-  color: var(--lt-green-darken-2);
-  border-bottom: 2px solid var(--lt-green);
+  color: var(--lt-blue);
+  border-bottom: 2px solid var(--lt-blue);
 }
 
 /* Column tints -- vertical striping instead of horizontal row zebra, so
@@ -191,8 +191,8 @@
   background: var(--lt-gray);
 }
 .rg-colbg--today {
-  background: var(--lt-green-lighten-3);
-  box-shadow: inset 2px 0 0 var(--lt-green), inset -2px 0 0 var(--lt-green);
+  background: var(--lt-blue-lighten-4);
+  box-shadow: inset 2px 0 0 var(--lt-blue), inset -2px 0 0 var(--lt-blue);
 }
 
 /* ---- Grouping: by team only (a team's initiatives can span several focus
