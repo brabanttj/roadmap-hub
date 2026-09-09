@@ -329,16 +329,16 @@
   height: 28px;
   margin: 0 4px;
   border-radius: var(--lt-radius-pill);
+  border: 1px solid transparent;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  box-shadow: 0 1px 2px rgba(16, 31, 48, 0.18);
-  transition: filter var(--lt-transition), transform var(--lt-transition), box-shadow var(--lt-transition);
+  box-shadow: 0 1px 2px rgba(16, 31, 48, 0.06);
+  transition: transform var(--lt-transition), box-shadow var(--lt-transition), border-color var(--lt-transition);
 }
 .rg-bar:hover {
-  filter: brightness(1.08);
   transform: translateY(-1px) scale(1.02);
   box-shadow: var(--lt-shadow-md);
 }
@@ -346,20 +346,40 @@
   padding: 0 10px;
   font-size: var(--lt-fs-xs);
   font-weight: var(--lt-fw-bold);
-  color: #fff;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
+/* Soft, badge-style fills (light background + a darker matching border and
+   text) instead of solid saturated blocks -- same pattern as .lt-badge, so
+   a timeline full of bars doesn't read as a wall of bright color. */
 .rg-bar--backlog {
-  background: var(--lt-red);
+  background: var(--lt-red-lighten-4);
+  border-color: #f0c3cc;
+}
+.rg-bar--backlog .rg-bar__status {
+  color: var(--lt-red-darken);
 }
 .rg-bar--in_development {
-  background: var(--lt-green);
+  background: var(--lt-green-lighten-3);
+  border-color: var(--lt-green-lighten-2);
 }
 .rg-bar--in_development .rg-bar__status {
-  color: var(--lt-deep-blue);
+  color: var(--lt-green-darken-2);
 }
 .rg-bar--completed {
-  background: var(--lt-deep-blue);
+  background: var(--lt-blue-lighten-4);
+  border-color: var(--lt-blue-lighten-2);
+}
+.rg-bar--completed .rg-bar__status {
+  color: var(--lt-deep-blue);
+}
+.rg-bar:hover.rg-bar--backlog {
+  border-color: var(--lt-red);
+}
+.rg-bar:hover.rg-bar--in_development {
+  border-color: var(--lt-green-darken-2);
+}
+.rg-bar:hover.rg-bar--completed {
+  border-color: var(--lt-deep-blue);
 }
