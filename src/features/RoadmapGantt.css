@@ -195,17 +195,17 @@
   align-items: center;
   gap: var(--lt-space-2);
   padding: 0 var(--lt-space-4);
-  background: var(--lt-blue-lighten-4);
+  background: var(--lt-text-secondary);
   border-top: 1px solid var(--lt-color-border);
   border-bottom: 1px solid var(--lt-color-border);
   font-size: var(--lt-fs-xs);
   font-weight: var(--lt-fw-black);
   text-transform: uppercase;
   letter-spacing: 0.07em;
-  color: var(--lt-blue);
+  color: #fff;
 }
 .rg-teamband--filler {
-  background: var(--lt-blue-lighten-4);
+  background: var(--lt-text-secondary);
   border-top: 1px solid var(--lt-color-border);
   border-bottom: 1px solid var(--lt-color-border);
 }
