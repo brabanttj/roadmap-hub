@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { Card, Input, Select, Button, IllustrationBadge } from "../components/ui/index.js";
-import { capitalizeFirst } from "../lib/text.js";
+import { Card, Input, Select, MultiSelect, Button, IllustrationBadge } from "../components/ui/index.js";
+import { capitalizeFirst, IMPACTED_PRODUCTS } from "../lib/text.js";
 import "./IdeaForm.css";
 
 const FRIENDLY_ERROR = "Something went wrong. Please try again.";
@@ -12,6 +12,7 @@ const EMPTY_FORM = {
   currentState: "",
   futureState: "",
   successMetrics: "",
+  impactedProducts: [],
   submittedBy: "",
 };
 
@@ -138,6 +139,15 @@ export default function IdeaForm({ focusAreas, onSubmitted }) {
             value={form.successMetrics}
             onChange={updText("successMetrics")}
             rows={2}
+          />
+        </label>
+        <label className="lt-field">
+          <span className="lt-field__label">Impacted products</span>
+          <MultiSelect
+            label="Products"
+            options={IMPACTED_PRODUCTS.map((p) => ({ value: p, label: p }))}
+            selected={form.impactedProducts}
+            onChange={(next) => setForm((f) => ({ ...f, impactedProducts: next }))}
           />
         </label>
         <Input

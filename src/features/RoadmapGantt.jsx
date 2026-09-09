@@ -46,23 +46,26 @@ function initiativeFacts(item) {
     item.startMonth && item.endMonth
       ? `${MONTH_NAMES[item.startMonth - 1]} ${item.startYear} – ${MONTH_NAMES[item.endMonth - 1]} ${item.endYear}`
       : "Unscheduled (Backlog)";
+  // `wide: true` facts always take the full row (long free text); the rest
+  // pair up two-per-row so the whole card stays short enough to fit on
+  // screen without needing to scroll -- see .rg-tooltip__facts.
   return [
     { label: "Team", value: item.team || "—" },
     { label: "Focus area", value: item.focusArea || "—" },
     { label: "Status", value: STATUS_LABEL[item.status] },
     { label: "Completed", value: item.completed ? "Yes" : "No" },
-    { label: "Schedule", value: schedule },
-    { label: "Summary", value: item.summary || "—" },
-    { label: "Current state", value: item.currentState || "—" },
-    { label: "Future state", value: item.futureState || "—" },
-    { label: "Success metrics", value: item.successMetrics || "—" },
+    { label: "Schedule", value: schedule, wide: true },
+    { label: "Summary", value: item.summary || "—", wide: true },
+    { label: "Current state", value: item.currentState || "—", wide: true },
+    { label: "Future state", value: item.futureState || "—", wide: true },
+    { label: "Success metrics", value: item.successMetrics || "—", wide: true },
     { label: "Impacted teams", value: item.impactedTeams?.length ? item.impactedTeams.join(", ") : "—" },
     { label: "Impacted products", value: item.impactedProducts?.length ? item.impactedProducts.join(", ") : "—" },
     { label: "Submitted by", value: item.submittedBy || "—" },
     { label: "Submitted", value: fmtDate(item.submittedAt) },
     { label: "Reviewed by", value: item.reviewedBy || "—" },
     { label: "Reviewed", value: fmtDate(item.reviewedAt) },
-    { label: "Reviewer notes", value: item.reviewerNotes || "—" },
+    { label: "Reviewer notes", value: item.reviewerNotes || "—", wide: true },
   ];
 }
 
@@ -455,7 +458,7 @@ function HoverTooltip({ item, anchorRect }) {
       <div className="rg-tooltip__title">{item.title}</div>
       <dl className="rg-tooltip__facts">
         {initiativeFacts(item).map((f) => (
-          <div className="rg-tooltip__fact" key={f.label}>
+          <div className={`rg-tooltip__fact${f.wide ? " rg-tooltip__fact--wide" : ""}`} key={f.label}>
             <dt>{f.label}</dt>
             <dd>{f.value}</dd>
           </div>

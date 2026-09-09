@@ -320,10 +320,16 @@
 .rg-tooltip--portal {
   position: fixed;
   z-index: 1000;
-  width: 360px;
-  max-width: min(360px, 90vw);
-  max-height: 70vh;
-  overflow-y: auto;
+  width: 460px;
+  max-width: min(460px, 92vw);
+  /* No internal scroll -- pointer-events:none below means it could never
+     be scrolled anyway, which used to silently clip the bottom of long
+     content. Instead the whole card is capped to fit within the viewport
+     it's clamped into (see HoverTooltip in RoadmapGantt.jsx) and the
+     two-column fact grid below keeps the natural height short enough that
+     everything fits without hitting this cap in practice. */
+  max-height: calc(100vh - 24px);
+  overflow: hidden;
   /* Purely informational, no controls inside -- must never intercept the
      cursor. Without this, a tooltip that (after being clamped/flipped to
      stay on-screen) ends up under the mouse steals hover from the row that
@@ -334,35 +340,44 @@
   border: 1px solid var(--lt-color-border);
   border-radius: var(--lt-radius-lg);
   box-shadow: var(--lt-shadow-lg);
-  padding: var(--lt-space-4);
+  padding: var(--lt-space-3) var(--lt-space-4);
   text-align: left;
 }
 .rg-tooltip__title {
   font-family: var(--lt-font-display);
   font-size: var(--lt-fs-md);
   color: var(--lt-deep-blue);
-  margin-bottom: var(--lt-space-3);
+  margin-bottom: var(--lt-space-2);
 }
+/* Two columns for short facts (Team, Status, Submitted by, ...); facts
+   with long free text (Summary, Current/Future state, ...) span both
+   columns via .rg-tooltip__fact--wide. Halving the height of the short
+   facts is what keeps the whole card short enough to fit on screen
+   without scrolling. */
 .rg-tooltip__facts {
-  display: flex;
-  flex-direction: column;
-  gap: var(--lt-space-3);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: var(--lt-space-3);
+  row-gap: var(--lt-space-2);
   margin: 0;
 }
+.rg-tooltip__fact--wide {
+  grid-column: 1 / -1;
+}
 .rg-tooltip__fact dt {
-  font-size: var(--lt-fs-xs);
+  font-size: 10px;
   font-weight: var(--lt-fw-black);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--lt-text-muted);
-  margin-bottom: 2px;
+  margin-bottom: 1px;
 }
 .rg-tooltip__fact dd {
   margin: 0;
-  font-size: var(--lt-fs-sm);
+  font-size: var(--lt-fs-xs);
   font-weight: var(--lt-fw-regular);
   color: var(--lt-text-secondary);
-  line-height: 1.5;
+  line-height: 1.4;
   white-space: normal;
 }
 
