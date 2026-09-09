@@ -161,6 +161,11 @@
 .rg-statuscount--completed {
   background: var(--lt-deep-blue);
 }
+.rg-statuscount--total {
+  background: var(--lt-white);
+  border: 1px solid var(--lt-color-border);
+  color: var(--lt-text-secondary);
+}
 .rg-headcell--now {
   color: var(--lt-green-darken-2);
   border-bottom: 2px solid var(--lt-green);
@@ -204,21 +209,6 @@
   border-top: 1px solid var(--lt-color-border);
   border-bottom: 1px solid var(--lt-color-border);
 }
-.rg-teamband__count {
-  display: inline-grid;
-  place-items: center;
-  min-width: 18px;
-  height: 18px;
-  padding: 0 6px;
-  border-radius: var(--lt-radius-pill);
-  background: var(--lt-white);
-  border: 1px solid var(--lt-color-border);
-  font-size: 10px;
-  letter-spacing: normal;
-  text-transform: none;
-  font-weight: var(--lt-fw-bold);
-  color: var(--lt-text-secondary);
-}
 
 /* ---- Initiative rows ---------------------------------------------------- */
 .rg-labelcell {
@@ -241,6 +231,17 @@
 .rg-labelcell:focus-visible {
   background: var(--lt-blue-lighten-4);
   color: var(--lt-blue);
+}
+/* Name color mirrors the bar/status-pill colors, so scanning the name
+   column alone tells you a row's status. */
+.rg-labelcell--backlog {
+  color: var(--lt-red);
+}
+.rg-labelcell--in_development {
+  color: var(--lt-green-darken-2);
+}
+.rg-labelcell--completed {
+  color: var(--lt-deep-blue);
 }
 .rg-labelcell__text {
   flex: 1;

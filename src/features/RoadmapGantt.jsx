@@ -71,14 +71,15 @@ function countByStatus(items) {
   return out;
 }
 
-function StatusCounts({ counts }) {
+function StatusCounts({ counts, total }) {
   return (
     <span className="rg-statuscounts">
-      {VISIBLE_STATUSES.filter((s) => counts[s] > 0).map((s) => (
+      {VISIBLE_STATUSES.map((s) => (
         <span key={s} className={`rg-statuscount rg-statuscount--${s}`}>
           {counts[s]}
         </span>
       ))}
+      <span className="rg-statuscount rg-statuscount--total">{total}</span>
     </span>
   );
 }
@@ -346,7 +347,7 @@ export default function RoadmapGantt({ initiatives, focusAreas, teams, onUpsert,
             <div className="rg-sidebargrid" style={{ gridTemplateRows: rowsTemplate }}>
               <div className="rg-headcell rg-headcell--label" style={{ gridRow: "1 / 3", gridColumn: 1 }}>
                 <span>Initiative</span>
-                <StatusCounts counts={totalCounts} />
+                <StatusCounts counts={totalCounts} total={visible.length} />
               </div>
               <div className="rg-headcell rg-headcell--focus" style={{ gridRow: "1 / 3", gridColumn: 2 }}>
                 {secondaryLabel}
@@ -439,8 +440,7 @@ function SidebarRow({ row, gridRow, secondaryField, guard, setEditing, onHover }
     return (
       <div className="rg-teamband" style={{ gridRow, gridColumn: "1 / -1" }}>
         <span className="rg-teamband__name">{row.label}</span>
-        <StatusCounts counts={row.counts} />
-        <span className="rg-teamband__count">{row.count}</span>
+        <StatusCounts counts={row.counts} total={row.count} />
       </div>
     );
   }
@@ -454,7 +454,7 @@ function SidebarRow({ row, gridRow, secondaryField, guard, setEditing, onHover }
     <Fragment>
       <button
         type="button"
-        className="rg-labelcell"
+        className={`rg-labelcell rg-labelcell--${item.status}`}
         style={{ gridRow, gridColumn: 1 }}
         onClick={onEdit}
         onMouseEnter={showTooltip}
