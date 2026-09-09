@@ -1,4 +1,4 @@
-import { Fragment, useMemo, useRef, useState } from "react";
+import { Fragment, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Card, Input, Select, MultiSelect, Button, IllustrationBadge } from "../components/ui/index.js";
 import { usePasswordGate } from "../lib/PasswordGate.jsx";
@@ -459,26 +459,50 @@ export default function RoadmapGantt({ initiatives, focusAreas, teams, onUpsert,
         />
       )}
 
-      {hover &&
-        createPortal(
-          <div
-            className="rg-tooltip rg-tooltip--portal"
-            role="tooltip"
-            style={{ top: hover.rect.bottom + 6, left: hover.rect.left }}
-          >
-            <div className="rg-tooltip__title">{hover.item.title}</div>
-            <dl className="rg-tooltip__facts">
-              {initiativeFacts(hover.item).map((f) => (
-                <div className="rg-tooltip__fact" key={f.label}>
-                  <dt>{f.label}</dt>
-                  <dd>{f.value}</dd>
-                </div>
-              ))}
-            </dl>
-          </div>,
-          document.body
-        )}
+      {hover && createPortal(<HoverTooltip item={hover.item} anchorRect={hover.rect} />, document.body)}
     </>
+  );
+}
+
+// Positioned in two passes: first rendered off-screen-safe at its naive
+// anchor position so it can be measured, then clamped to stay fully inside
+// the viewport (flipping above the anchor, and/or sliding left) instead of
+// running off the right/bottom edge, which is unreadable.
+function HoverTooltip({ item, anchorRect }) {
+  const ref = useRef(null);
+  const [style, setStyle] = useState({ top: anchorRect.bottom + 6, left: anchorRect.left, visibility: "hidden" });
+
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const margin = 12;
+    const rect = el.getBoundingClientRect();
+    let left = anchorRect.left;
+    if (left + rect.width > window.innerWidth - margin) {
+      left = window.innerWidth - margin - rect.width;
+    }
+    if (left < margin) left = margin;
+
+    let top = anchorRect.bottom + 6;
+    if (top + rect.height > window.innerHeight - margin) {
+      const above = anchorRect.top - 6 - rect.height;
+      top = above >= margin ? above : Math.max(margin, window.innerHeight - margin - rect.height);
+    }
+    setStyle({ top, left, visibility: "visible" });
+  }, [item, anchorRect]);
+
+  return (
+    <div ref={ref} className="rg-tooltip rg-tooltip--portal" role="tooltip" style={style}>
+      <div className="rg-tooltip__title">{item.title}</div>
+      <dl className="rg-tooltip__facts">
+        {initiativeFacts(item).map((f) => (
+          <div className="rg-tooltip__fact" key={f.label}>
+            <dt>{f.label}</dt>
+            <dd>{f.value}</dd>
+          </div>
+        ))}
+      </dl>
+    </div>
   );
 }
 
