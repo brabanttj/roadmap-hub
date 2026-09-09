@@ -325,6 +325,12 @@
   max-width: min(360px, 90vw);
   max-height: 70vh;
   overflow-y: auto;
+  /* Purely informational, no controls inside -- must never intercept the
+     cursor. Without this, a tooltip that (after being clamped/flipped to
+     stay on-screen) ends up under the mouse steals hover from the row that
+     triggered it, which immediately hides the tooltip, which gives hover
+     back to the row, which shows it again -- a flicker loop. */
+  pointer-events: none;
   background: var(--lt-white);
   border: 1px solid var(--lt-color-border);
   border-radius: var(--lt-radius-lg);
