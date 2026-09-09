@@ -33,12 +33,12 @@
   margin: var(--lt-space-2) auto var(--lt-space-2);
 }
 .rp-header__sub {
-  max-width: 60ch;
   min-height: 1.6em;
   margin: 0 auto;
   color: var(--lt-text-secondary);
-  font-size: var(--lt-fs-md);
+  font-size: clamp(0.8rem, 1.4vw, var(--lt-fs-md));
   font-style: italic;
+  white-space: nowrap;
   animation: rp-quote-fade 500ms ease;
 }
 @keyframes rp-quote-fade {
