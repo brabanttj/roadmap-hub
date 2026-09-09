@@ -31,13 +31,7 @@
   max-height: calc(100vh - 340px);
   border: 1px solid var(--lt-color-border);
   border-radius: var(--lt-radius-lg);
-  /* Semi-transparent, not solid white -- so the page's brand-leaf
-     watermark (position: fixed, behind everything) shows through the
-     table's empty background instead of being fully blocked by it. Cells
-     that carry readable text (labels, headers) stay opaque -- see
-     .rg-labelcell/.rg-focuscell/.rg-headcell -- so legibility isn't
-     affected, only the empty space between/around them. */
-  background: rgba(255, 255, 255, 0.94);
+  background: var(--lt-white);
   box-shadow: var(--lt-shadow-sm);
   overflow: hidden;
 }
@@ -103,6 +97,9 @@
   position: sticky;
   top: 0;
   z-index: 6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   padding: var(--lt-space-2) var(--lt-space-2);
   background: var(--lt-white);
   color: var(--lt-text-muted);
@@ -126,6 +123,7 @@
 }
 .rg-headcell--label,
 .rg-headcell--focus {
+  justify-content: flex-start;
   text-align: left;
   padding-left: var(--lt-space-4);
   color: var(--lt-deep-blue);
@@ -143,7 +141,7 @@
   background: transparent;
 }
 .rg-colbg--alt {
-  background: rgba(246, 248, 250, 0.6);
+  background: var(--lt-gray);
 }
 .rg-colbg--today {
   background: var(--lt-green-lighten-3);

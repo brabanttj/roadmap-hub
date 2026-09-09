@@ -82,8 +82,8 @@ export default function RoadmapPlanner() {
 
   return (
     <div className="rp-shell">
-      <div className="cf-watermark" aria-hidden="true">
-        <Icon name="brandLeaf" preserveAspectRatio="none" />
+      <div className="rp-leafmark" aria-hidden="true">
+        <Icon name="brandLeaf" preserveAspectRatio="xMidYMid meet" />
       </div>
       <header className="rp-header">
         <span className="lt-eyebrow">LendingTree Insurance Division</span>

@@ -5,23 +5,23 @@
   padding: var(--lt-space-6) var(--lt-space-6) var(--lt-space-2);
 }
 
-/* Faint brand-leaf watermark, pinned behind all content regardless of
-   scroll -- ported from ai-capability-finder's identical pattern. */
-.cf-watermark {
+/* Small brand-leaf mark, fixed to the viewport's top-right corner so it
+   stays put regardless of scroll -- a deliberate small logo mark rather
+   than the earlier full-bleed background texture. */
+.rp-leafmark {
   position: fixed;
-  inset: 0;
-  z-index: -1;
-  overflow: hidden;
-  display: flex;
-  align-items: flex-end;
-  justify-content: flex-end;
+  top: var(--lt-space-4);
+  right: var(--lt-space-6);
+  z-index: 50;
+  width: 40px;
+  height: 40px;
   pointer-events: none;
 }
-.cf-watermark svg {
+.rp-leafmark svg {
   width: 100%;
   height: 100%;
   color: var(--lt-green);
-  opacity: 0.08;
+  opacity: 0.55;
 }
 
 .rp-header {

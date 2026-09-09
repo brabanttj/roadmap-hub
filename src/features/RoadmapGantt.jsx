@@ -363,7 +363,7 @@ export default function RoadmapGantt({ initiatives, focusAreas, teams, onUpsert,
                 <div
                   key={col.value}
                   className={`rg-headcell${i === todayColIndex ? " rg-headcell--now" : ""}`}
-                  style={{ gridRow: 2, gridColumn: i + 1 }}
+                  style={{ gridRow: 2, gridColumn: i + 1, top: HEAD_ROW_H }}
                 >
                   {col.label}
                 </div>
