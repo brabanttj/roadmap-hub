@@ -161,6 +161,13 @@ export default function RoadmapGantt({ initiatives, focusAreas, teams, onUpsert,
   const primaryFallback = groupBy === "team" ? "(No team)" : "(No focus area)";
   const secondaryLabel = groupBy === "team" ? "Focus Area" : "Team";
 
+  // Priority is a per-team drag order -- it doesn't mean anything once
+  // grouped by Focus Area (a focus area isn't a single owner who could
+  // prioritize across teams), so that grouping always sorts by start date
+  // instead, and the control locks to reflect it rather than silently
+  // ignoring whatever the user has it set to.
+  const sortModeEffective = groupBy === "focusArea" ? "startDate" : sortMode;
+
   // Columns actually rendered: one per selected (year, month), in
   // chronological order; Backlog forced last whenever it's part of the
   // selection (or the default/unfiltered view) -- never wherever the user
@@ -232,7 +239,7 @@ export default function RoadmapGantt({ initiatives, focusAreas, teams, onUpsert,
           return ae - be || a.title.localeCompare(b.title);
         });
       let active = items.filter((i) => i.status !== "completed");
-      if (sortMode === "startDate") {
+      if (sortModeEffective === "startDate") {
         active = [...active].sort((a, b) => {
           const as = a.startMonth ? monthIndex(a.startYear, a.startMonth) : Infinity;
           const bs = b.startMonth ? monthIndex(b.startYear, b.startMonth) : Infinity;
@@ -244,7 +251,7 @@ export default function RoadmapGantt({ initiatives, focusAreas, teams, onUpsert,
       for (const item of ordered) out.push({ type: "item", key: `item-${item.id}`, item });
     }
     return out;
-  }, [visible, primaryField, primaryOrder, primaryFallback, sortMode]);
+  }, [visible, primaryField, primaryOrder, primaryFallback, sortModeEffective]);
 
   const totalCounts = useMemo(() => countByStatus(visible), [visible]);
 
@@ -273,7 +280,7 @@ export default function RoadmapGantt({ initiatives, focusAreas, teams, onUpsert,
   // for Backlog/In Development items -- Completed initiatives are never
   // manually prioritized, they're always ordered by completion date (see
   // `rows` above).
-  const reorderable = groupBy === "team" && sortMode === "priority";
+  const reorderable = groupBy === "team" && sortModeEffective === "priority";
 
   // Drop = insert the dragged item just before the drop target, within
   // whichever team they both belong to. Reordered against the team's FULL
@@ -388,8 +395,15 @@ export default function RoadmapGantt({ initiatives, focusAreas, teams, onUpsert,
             <option value="team">Group by Team</option>
             <option value="focusArea">Group by Focus Area</option>
           </Select>
-          <Select value={sortMode} onChange={(e) => setSortMode(e.target.value)} aria-label="Sort by">
-            <option value="priority">Sort by Priority</option>
+          <Select
+            value={sortModeEffective}
+            onChange={(e) => setSortMode(e.target.value)}
+            disabled={groupBy === "focusArea"}
+            aria-label="Sort by"
+          >
+            <option value="priority" disabled={groupBy === "focusArea"}>
+              Sort by Priority
+            </option>
             <option value="startDate">Sort by Start Date</option>
           </Select>
           <Button variant="accent" onClick={guard(() => setEditing({ isNew: true }))}>
