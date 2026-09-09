@@ -110,7 +110,7 @@ function occupiedIndices(item, activeColumns) {
   return out;
 }
 
-export default function RoadmapGantt({ initiatives, focusAreas, teams, onUpsert, onRemove }) {
+export default function RoadmapGantt({ initiatives, focusAreas, teams, onUpsert, onRemove, onReorder }) {
   const guard = usePasswordGate();
   const [search, setSearch] = useState("");
   const [focusAreaFilter, setFocusAreaFilter] = useState([]); // [] = all
@@ -122,10 +122,12 @@ export default function RoadmapGantt({ initiatives, focusAreas, teams, onUpsert,
   const [editing, setEditing] = useState(null); // { initiative } | { isNew: true } | null
   const [hover, setHover] = useState(null); // { item, rect } | null -- drives the portal tooltip
   const [scrollTop, setScrollTop] = useState(0); // drives which group's sticky band is shown
+  const [dragOverId, setDragOverId] = useState(null); // item id currently being dragged over -- drop-target highlight
 
   const sidebarRef = useRef(null);
   const hscrollRef = useRef(null);
   const syncingRef = useRef(false);
+  const dragIdRef = useRef(null); // id of the item currently being dragged, if any
   const onHscrollScroll = (e) => {
     setScrollTop(e.currentTarget.scrollTop);
     if (syncingRef.current) return;
@@ -243,6 +245,51 @@ export default function RoadmapGantt({ initiatives, focusAreas, teams, onUpsert,
     onRemove(id);
   };
 
+  // Only reorderable when grouped by Team -- each array here is one team's
+  // (visible) item ids, in their current on-screen order.
+  const reorderable = groupBy === "team";
+  const idGroups = useMemo(() => {
+    const groups = [];
+    let current = null;
+    for (const r of rows) {
+      if (r.type === "group") {
+        current = [];
+        groups.push(current);
+      } else {
+        current.push(r.item.id);
+      }
+    }
+    return groups;
+  }, [rows]);
+
+  // Drop = insert the dragged item just before the drop target, within
+  // whichever group they both belong to; dragging across groups is a
+  // no-op (there's no "team" for a drop to move an item into here).
+  const dropReorder = (draggedId, targetId) => {
+    if (draggedId === targetId) return;
+    const group = idGroups.find((g) => g.includes(draggedId) && g.includes(targetId));
+    if (!group) return;
+    const without = group.filter((id) => id !== draggedId);
+    const targetIdx = without.indexOf(targetId);
+    const nextIds = [...without.slice(0, targetIdx), draggedId, ...without.slice(targetIdx)];
+    guard(async () => {
+      const byId = new Map(visible.map((i) => [i.id, i]));
+      try {
+        const res = await fetch("/api/initiatives/reorder", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ids: nextIds }),
+        });
+        const j = await res.json();
+        if (!res.ok || !j.ok) throw new Error(j.error || "Something went wrong. Please try again.");
+        onReorder(nextIds.map((id) => j.initiatives.find((i) => i.id === id) || byId.get(id)));
+      } catch {
+        // Reorder is low-stakes and self-evident when it fails to stick --
+        // no banner, the row will simply stay put.
+      }
+    })();
+  };
+
   const bodyRowCount = rows.length;
   const rowsTemplate = `${HEAD_ROW_H}px repeat(${bodyRowCount}, ${BODY_ROW_H}px)`;
   const lastRowLine = bodyRowCount + 2;
@@ -356,7 +403,20 @@ export default function RoadmapGantt({ initiatives, focusAreas, teams, onUpsert,
                 {secondaryLabel}
               </div>
               {rows.map((r, idx) => (
-                <SidebarRow key={r.key} row={r} gridRow={idx + 2} secondaryField={secondaryField} guard={guard} setEditing={setEditing} onHover={setHover} />
+                <SidebarRow
+                  key={r.key}
+                  row={r}
+                  gridRow={idx + 2}
+                  secondaryField={secondaryField}
+                  guard={guard}
+                  setEditing={setEditing}
+                  onHover={setHover}
+                  reorderable={reorderable}
+                  dragIdRef={dragIdRef}
+                  dragOverId={dragOverId}
+                  setDragOverId={setDragOverId}
+                  onDropReorder={dropReorder}
+                />
               ))}
               {activeGroup && (
                 <div
@@ -468,7 +528,19 @@ function HoverTooltip({ item, anchorRect }) {
   );
 }
 
-function SidebarRow({ row, gridRow, secondaryField, guard, setEditing, onHover }) {
+function SidebarRow({
+  row,
+  gridRow,
+  secondaryField,
+  guard,
+  setEditing,
+  onHover,
+  reorderable,
+  dragIdRef,
+  dragOverId,
+  setDragOverId,
+  onDropReorder,
+}) {
   if (row.type === "group") {
     return (
       <div className="rg-teamband" style={{ gridRow, gridColumn: "1 / -1" }}>
@@ -483,18 +555,56 @@ function SidebarRow({ row, gridRow, secondaryField, guard, setEditing, onHover }
   const showTooltip = (e) => onHover({ item, rect: e.currentTarget.getBoundingClientRect() });
   const hideTooltip = () => onHover(null);
 
+  // Native HTML5 drag-and-drop -- reordering initiatives within a team
+  // group, only available when grouped by Team (see `reorderable` in
+  // RoadmapGantt). The dragged id lives in a ref, not state, so dragging
+  // itself doesn't trigger re-renders; only the drop-target highlight does.
+  const onDragStart = (e) => {
+    dragIdRef.current = item.id;
+    e.dataTransfer.effectAllowed = "move";
+  };
+  const onDragOver = (e) => {
+    e.preventDefault();
+    if (dragOverId !== item.id) setDragOverId(item.id);
+  };
+  const onDragLeave = () => {
+    if (dragOverId === item.id) setDragOverId(null);
+  };
+  const onDrop = (e) => {
+    e.preventDefault();
+    setDragOverId(null);
+    const draggedId = dragIdRef.current;
+    dragIdRef.current = null;
+    if (draggedId != null) onDropReorder(draggedId, item.id);
+  };
+  const onDragEnd = () => {
+    dragIdRef.current = null;
+    setDragOverId(null);
+  };
+
   return (
     <Fragment>
       <button
         type="button"
-        className={`rg-labelcell rg-labelcell--${item.status}`}
+        className={`rg-labelcell rg-labelcell--${item.status}${dragOverId === item.id ? " rg-labelcell--dragover" : ""}`}
         style={{ gridRow, gridColumn: 1 }}
         onClick={onEdit}
         onMouseEnter={showTooltip}
         onMouseLeave={hideTooltip}
         onFocus={showTooltip}
         onBlur={hideTooltip}
+        draggable={reorderable}
+        onDragStart={reorderable ? onDragStart : undefined}
+        onDragOver={reorderable ? onDragOver : undefined}
+        onDragLeave={reorderable ? onDragLeave : undefined}
+        onDrop={reorderable ? onDrop : undefined}
+        onDragEnd={reorderable ? onDragEnd : undefined}
       >
+        {reorderable && (
+          <span className="rg-labelcell__handle" aria-hidden="true" title="Drag to reorder">
+            ⠿
+          </span>
+        )}
         <span className="rg-labelcell__text">{item.title}</span>
       </button>
       <div className="rg-focuscell" style={{ gridRow, gridColumn: 2 }}>

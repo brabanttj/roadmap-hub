@@ -67,6 +67,18 @@ export default function RoadmapPlanner() {
   const removeInitiative = (id) =>
     setInitiatives((prev) => prev.filter((i) => i.id !== id));
 
+  // Drag-to-reorder within a team group: `orderedInitiatives` is that one
+  // group's items in their new order. Every other item keeps its current
+  // slot in the array -- only the positions belonging to this group's ids
+  // get filled in with the new order.
+  const reorderInitiatives = (orderedInitiatives) => {
+    const byId = new Map(orderedInitiatives.map((i) => [i.id, i]));
+    setInitiatives((prev) => {
+      let next = 0;
+      return prev.map((item) => (byId.has(item.id) ? orderedInitiatives[next++] : item));
+    });
+  };
+
   const ideaCount = initiatives.filter((i) => i.status === "idea").length;
   const rejectedCount = initiatives.filter((i) => i.status === "rejected").length;
 
@@ -155,6 +167,7 @@ export default function RoadmapPlanner() {
           teams={teams}
           onUpsert={upsertInitiative}
           onRemove={removeInitiative}
+          onReorder={reorderInitiatives}
         />
       )}
       {view === "submit" && (

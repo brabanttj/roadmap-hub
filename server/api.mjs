@@ -173,6 +173,41 @@ router.post("/initiatives", async (req, res) => {
   }
 });
 
+// ---- PUT /api/initiatives/reorder --------------------------------------------
+// Drag-to-reorder within a team group on the Gantt. Takes the full list of
+// ids for just that one group, in their new order, and reassigns sort_order
+// starting from the lowest sort_order already held by any of them -- so the
+// group's position relative to every OTHER group is untouched, only the
+// order within it changes. Declared before the `/:id` route below since
+// Express would otherwise try to parse "reorder" as that route's numeric id.
+router.put("/initiatives/reorder", async (req, res) => {
+  const ids = Array.isArray(req.body?.ids) ? req.body.ids.map(Number) : [];
+  if (!ids.length || ids.some((n) => !Number.isInteger(n))) {
+    return res.status(400).json({ ok: false, error: "ids must be a non-empty array of integers" });
+  }
+  try {
+    const { rows: existing } = await pool.query(
+      `SELECT id, sort_order FROM initiatives WHERE id = ANY($1::int[])`,
+      [ids]
+    );
+    if (existing.length !== ids.length) {
+      return res.status(404).json({ ok: false, error: "Some initiatives not found" });
+    }
+    const base = Math.min(...existing.map((r) => r.sort_order));
+    await Promise.all(
+      ids.map((id, i) => pool.query(`UPDATE initiatives SET sort_order = $1 WHERE id = $2`, [base + i, id]))
+    );
+    const { rows } = await pool.query(
+      `SELECT ${INITIATIVE_COLUMNS} FROM initiatives WHERE id = ANY($1::int[]) ORDER BY sort_order`,
+      [ids]
+    );
+    res.json({ ok: true, initiatives: rows });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ ok: false, error: String(e.message || e) });
+  }
+});
+
 // ---- PUT /api/initiatives/:id ------------------------------------------------
 // Full edit — used both for scheduling (setting months moves the item onto
 // the Gantt) and general field edits.

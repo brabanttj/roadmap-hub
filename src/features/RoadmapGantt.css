@@ -291,6 +291,19 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+/* Drag-to-reorder within a team group (see RoadmapGantt.jsx's
+   `reorderable`) -- a small grip glyph so it reads as a handle, and a
+   dashed top border on whichever row the dragged item is currently over,
+   showing where it'll land on drop. */
+.rg-labelcell__handle {
+  flex: 0 0 auto;
+  color: var(--lt-gray-300);
+  cursor: grab;
+  line-height: 1;
+}
+.rg-labelcell--dragover {
+  box-shadow: inset 0 2px 0 0 var(--lt-blue);
+}
 
 /* Focus Area / Team column -- plain text instead of a color code. */
 .rg-focuscell {
