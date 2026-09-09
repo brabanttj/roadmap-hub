@@ -245,35 +245,32 @@ export default function RoadmapGantt({ initiatives, focusAreas, teams, onUpsert,
     onRemove(id);
   };
 
-  // Only reorderable when grouped by Team -- each array here is one team's
-  // (visible) item ids, in their current on-screen order.
+  // Only reorderable when grouped by Team.
   const reorderable = groupBy === "team";
-  const idGroups = useMemo(() => {
-    const groups = [];
-    let current = null;
-    for (const r of rows) {
-      if (r.type === "group") {
-        current = [];
-        groups.push(current);
-      } else {
-        current.push(r.item.id);
-      }
-    }
-    return groups;
-  }, [rows]);
 
   // Drop = insert the dragged item just before the drop target, within
-  // whichever group they both belong to; dragging across groups is a
-  // no-op (there's no "team" for a drop to move an item into here).
+  // whichever team they both belong to. Reordered against the team's FULL
+  // roster (`initiatives`, not the filtered `visible`/`rows`) -- otherwise
+  // a teammate hidden by the active filters (a different status, a month
+  // outside the current range, ...) would keep its old sort_order while
+  // the visible items around it get renumbered, so it could land in a
+  // completely different spot the next time a filter change brings it
+  // back into view. Using the full roster means only the dragged item
+  // actually moves; every hidden sibling keeps its exact relative position.
   const dropReorder = (draggedId, targetId) => {
     if (draggedId === targetId) return;
-    const group = idGroups.find((g) => g.includes(draggedId) && g.includes(targetId));
-    if (!group) return;
-    const without = group.filter((id) => id !== draggedId);
+    const draggedItem = visible.find((i) => i.id === draggedId);
+    const targetItem = visible.find((i) => i.id === targetId);
+    if (!draggedItem || !targetItem) return;
+    const groupKey = draggedItem.team || "(No team)";
+    if ((targetItem.team || "(No team)") !== groupKey) return; // dropped outside its own team -- ignore
+
+    const fullTeamIds = initiatives.filter((i) => (i.team || "(No team)") === groupKey).map((i) => i.id);
+    const without = fullTeamIds.filter((id) => id !== draggedId);
     const targetIdx = without.indexOf(targetId);
     const nextIds = [...without.slice(0, targetIdx), draggedId, ...without.slice(targetIdx)];
     guard(async () => {
-      const byId = new Map(visible.map((i) => [i.id, i]));
+      const byId = new Map(initiatives.map((i) => [i.id, i]));
       try {
         const res = await fetch("/api/initiatives/reorder", {
           method: "PUT",
