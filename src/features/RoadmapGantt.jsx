@@ -118,6 +118,7 @@ export default function RoadmapGantt({ initiatives, focusAreas, teams, onUpsert,
   const [statusFilter, setStatusFilter] = useState([]); // [] = all
   const [columnFilter, setColumnFilter] = useState([]); // [] = current year's months + backlog
   const [groupBy, setGroupBy] = useState("team"); // "team" | "focusArea"
+  const [sortMode, setSortMode] = useState("priority"); // "priority" | "startDate" -- see `rows` below
   const [filtersOpen, setFiltersOpen] = useState(true);
   const [editing, setEditing] = useState(null); // { initiative } | { isNew: true } | null
   const [hover, setHover] = useState(null); // { item, rect } | null -- drives the portal tooltip
@@ -205,6 +206,12 @@ export default function RoadmapGantt({ initiatives, focusAreas, teams, onUpsert,
   // shown as its own column per row instead of a second grouping level,
   // since e.g. a team's initiatives can span several focus areas (nesting
   // would duplicate the same group under each).
+  //
+  // Within a group: Completed initiatives are never manually prioritized --
+  // they always sort first, earliest completion month first (then title).
+  // Backlog/In Development initiatives follow, ordered either by their
+  // manual drag priority (`sortMode === "priority"`, the array's natural
+  // order -- see `dropReorder` below) or by scheduled start date.
   const rows = useMemo(() => {
     const byGroup = new Map();
     for (const i of visible) {
@@ -217,11 +224,27 @@ export default function RoadmapGantt({ initiatives, focusAreas, teams, onUpsert,
     );
     const out = [];
     for (const [label, items] of entries) {
-      out.push({ type: "group", key: `group-${label}`, label, count: items.length, counts: countByStatus(items) });
-      for (const item of items) out.push({ type: "item", key: `item-${item.id}`, item });
+      const completed = items
+        .filter((i) => i.status === "completed")
+        .sort((a, b) => {
+          const ae = a.endMonth ? monthIndex(a.endYear, a.endMonth) : Infinity;
+          const be = b.endMonth ? monthIndex(b.endYear, b.endMonth) : Infinity;
+          return ae - be || a.title.localeCompare(b.title);
+        });
+      let active = items.filter((i) => i.status !== "completed");
+      if (sortMode === "startDate") {
+        active = [...active].sort((a, b) => {
+          const as = a.startMonth ? monthIndex(a.startYear, a.startMonth) : Infinity;
+          const bs = b.startMonth ? monthIndex(b.startYear, b.startMonth) : Infinity;
+          return as - bs || a.title.localeCompare(b.title);
+        });
+      }
+      const ordered = [...completed, ...active];
+      out.push({ type: "group", key: `group-${label}`, label, count: ordered.length, counts: countByStatus(ordered) });
+      for (const item of ordered) out.push({ type: "item", key: `item-${item.id}`, item });
     }
     return out;
-  }, [visible, primaryField, primaryOrder, primaryFallback]);
+  }, [visible, primaryField, primaryOrder, primaryFallback, sortMode]);
 
   const totalCounts = useMemo(() => countByStatus(visible), [visible]);
 
@@ -245,27 +268,35 @@ export default function RoadmapGantt({ initiatives, focusAreas, teams, onUpsert,
     onRemove(id);
   };
 
-  // Only reorderable when grouped by Team.
-  const reorderable = groupBy === "team";
+  // Only reorderable when grouped by Team, sorting by priority (dragging
+  // wouldn't mean anything under a derived sort like start date), and only
+  // for Backlog/In Development items -- Completed initiatives are never
+  // manually prioritized, they're always ordered by completion date (see
+  // `rows` above).
+  const reorderable = groupBy === "team" && sortMode === "priority";
 
   // Drop = insert the dragged item just before the drop target, within
   // whichever team they both belong to. Reordered against the team's FULL
-  // roster (`initiatives`, not the filtered `visible`/`rows`) -- otherwise
-  // a teammate hidden by the active filters (a different status, a month
-  // outside the current range, ...) would keep its old sort_order while
-  // the visible items around it get renumbered, so it could land in a
-  // completely different spot the next time a filter change brings it
-  // back into view. Using the full roster means only the dragged item
-  // actually moves; every hidden sibling keeps its exact relative position.
+  // active (non-completed) roster (`initiatives`, not the filtered
+  // `visible`/`rows`) -- otherwise a teammate hidden by the active filters
+  // (a different status, a month outside the current range, ...) would
+  // keep its old sort_order while the visible items around it get
+  // renumbered, so it could land in a completely different spot the next
+  // time a filter change brings it back into view. Using the full roster
+  // means only the dragged item actually moves; every hidden sibling keeps
+  // its exact relative position.
   const dropReorder = (draggedId, targetId) => {
     if (draggedId === targetId) return;
     const draggedItem = visible.find((i) => i.id === draggedId);
     const targetItem = visible.find((i) => i.id === targetId);
     if (!draggedItem || !targetItem) return;
+    if (draggedItem.status === "completed" || targetItem.status === "completed") return;
     const groupKey = draggedItem.team || "(No team)";
     if ((targetItem.team || "(No team)") !== groupKey) return; // dropped outside its own team -- ignore
 
-    const fullTeamIds = initiatives.filter((i) => (i.team || "(No team)") === groupKey).map((i) => i.id);
+    const fullTeamIds = initiatives
+      .filter((i) => (i.team || "(No team)") === groupKey && i.status !== "completed")
+      .map((i) => i.id);
     const without = fullTeamIds.filter((id) => id !== draggedId);
     const targetIdx = without.indexOf(targetId);
     const nextIds = [...without.slice(0, targetIdx), draggedId, ...without.slice(targetIdx)];
@@ -356,6 +387,10 @@ export default function RoadmapGantt({ initiatives, focusAreas, teams, onUpsert,
           <Select value={groupBy} onChange={(e) => setGroupBy(e.target.value)} aria-label="Group by">
             <option value="team">Group by Team</option>
             <option value="focusArea">Group by Focus Area</option>
+          </Select>
+          <Select value={sortMode} onChange={(e) => setSortMode(e.target.value)} aria-label="Sort by">
+            <option value="priority">Sort by Priority</option>
+            <option value="startDate">Sort by Start Date</option>
           </Select>
           <Button variant="accent" onClick={guard(() => setEditing({ isNew: true }))}>
             + Add initiative
@@ -551,6 +586,9 @@ function SidebarRow({
   const onEdit = () => guard(() => setEditing({ initiative: item }))();
   const showTooltip = (e) => onHover({ item, rect: e.currentTarget.getBoundingClientRect() });
   const hideTooltip = () => onHover(null);
+  // Completed initiatives are never manually prioritized (see `rows` in
+  // RoadmapGantt) -- only Backlog/In Development rows can be dragged.
+  const canDrag = reorderable && item.status !== "completed";
 
   // Native HTML5 drag-and-drop -- reordering initiatives within a team
   // group, only available when grouped by Team (see `reorderable` in
@@ -590,14 +628,14 @@ function SidebarRow({
         onMouseLeave={hideTooltip}
         onFocus={showTooltip}
         onBlur={hideTooltip}
-        draggable={reorderable}
-        onDragStart={reorderable ? onDragStart : undefined}
-        onDragOver={reorderable ? onDragOver : undefined}
-        onDragLeave={reorderable ? onDragLeave : undefined}
-        onDrop={reorderable ? onDrop : undefined}
-        onDragEnd={reorderable ? onDragEnd : undefined}
+        draggable={canDrag}
+        onDragStart={canDrag ? onDragStart : undefined}
+        onDragOver={canDrag ? onDragOver : undefined}
+        onDragLeave={canDrag ? onDragLeave : undefined}
+        onDrop={canDrag ? onDrop : undefined}
+        onDragEnd={canDrag ? onDragEnd : undefined}
       >
-        {reorderable && (
+        {canDrag && (
           <span className="rg-labelcell__handle" aria-hidden="true" title="Drag to reorder">
             ⠿
           </span>
