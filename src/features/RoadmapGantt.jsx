@@ -63,6 +63,26 @@ function initiativeFacts(item) {
   ];
 }
 
+// Counts by status, used for the colored count pills next to "Initiative"
+// and next to each team/focus-area group band.
+function countByStatus(items) {
+  const out = { backlog: 0, in_development: 0, completed: 0 };
+  for (const i of items) if (out[i.status] !== undefined) out[i.status]++;
+  return out;
+}
+
+function StatusCounts({ counts }) {
+  return (
+    <span className="rg-statuscounts">
+      {VISIBLE_STATUSES.filter((s) => counts[s] > 0).map((s) => (
+        <span key={s} className={`rg-statuscount rg-statuscount--${s}`}>
+          {counts[s]}
+        </span>
+      ))}
+    </span>
+  );
+}
+
 // Which columns (by index into `activeColumns`) a scheduled/unscheduled
 // initiative occupies, independent of which columns are currently shown.
 // A "week" column is occupied if the initiative's [startDate, endDate]
@@ -219,11 +239,13 @@ export default function RoadmapGantt({ initiatives, focusAreas, teams, onUpsert,
     );
     const out = [];
     for (const [label, items] of entries) {
-      out.push({ type: "group", key: `group-${label}`, label, count: items.length });
+      out.push({ type: "group", key: `group-${label}`, label, count: items.length, counts: countByStatus(items) });
       for (const item of items) out.push({ type: "item", key: `item-${item.id}`, item });
     }
     return out;
   }, [visible, primaryField, primaryOrder, primaryFallback]);
+
+  const totalCounts = useMemo(() => countByStatus(visible), [visible]);
 
   const save = async (payload, id) => {
     const isNew = !id;
@@ -323,7 +345,8 @@ export default function RoadmapGantt({ initiatives, focusAreas, teams, onUpsert,
           <div className="rg-sidebar" ref={sidebarRef} onScroll={onSidebarScroll}>
             <div className="rg-sidebargrid" style={{ gridTemplateRows: rowsTemplate }}>
               <div className="rg-headcell rg-headcell--label" style={{ gridRow: "1 / 3", gridColumn: 1 }}>
-                Initiative
+                <span>Initiative</span>
+                <StatusCounts counts={totalCounts} />
               </div>
               <div className="rg-headcell rg-headcell--focus" style={{ gridRow: "1 / 3", gridColumn: 2 }}>
                 {secondaryLabel}
@@ -416,6 +439,7 @@ function SidebarRow({ row, gridRow, secondaryField, guard, setEditing, onHover }
     return (
       <div className="rg-teamband" style={{ gridRow, gridColumn: "1 / -1" }}>
         <span className="rg-teamband__name">{row.label}</span>
+        <StatusCounts counts={row.counts} />
         <span className="rg-teamband__count">{row.count}</span>
       </div>
     );

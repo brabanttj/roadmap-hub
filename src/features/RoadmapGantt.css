@@ -124,10 +124,42 @@
 .rg-headcell--label,
 .rg-headcell--focus {
   justify-content: flex-start;
+  gap: var(--lt-space-2);
   text-align: left;
   padding-left: var(--lt-space-4);
   color: var(--lt-deep-blue);
   text-transform: uppercase;
+}
+
+/* Small colored pills: how many initiatives (overall, or within a team/
+   focus-area band) are in each status -- backlog/in development/completed,
+   matching the Gantt bar colors so the two read as the same language. */
+.rg-statuscounts {
+  display: inline-flex;
+  gap: 4px;
+}
+.rg-statuscount {
+  display: inline-grid;
+  place-items: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 6px;
+  border-radius: var(--lt-radius-pill);
+  font-size: 10px;
+  letter-spacing: normal;
+  text-transform: none;
+  font-weight: var(--lt-fw-bold);
+  color: #fff;
+}
+.rg-statuscount--backlog {
+  background: var(--lt-red);
+}
+.rg-statuscount--in_development {
+  background: var(--lt-green);
+  color: var(--lt-deep-blue);
+}
+.rg-statuscount--completed {
+  background: var(--lt-deep-blue);
 }
 .rg-headcell--now {
   color: var(--lt-green-darken-2);
