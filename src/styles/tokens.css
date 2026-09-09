@@ -24,19 +24,32 @@
   --lt-teal-darken: #044d4d;
   --lt-chartreuse: #deff85;
 
-  --lt-red: #ae2b41;
-  --lt-red-darken: #822031;
+  --lt-electric-salmon: #ff704d;
+  --lt-yellow: #ffc507;
+  --lt-purple: #5a3abb;
+
+  /* Grove color system's lt-red (grove.lendingtree.com color-system page) --
+     a brighter pink-red than the previous approximation. */
+  --lt-red: #d93551;
+  --lt-red-darken: #a3283d;
   --lt-red-lighten-4: #fbebee;
 
-  /* ---- Neutrals ------------------------------------------------------------ */
+  /* ---- Neutrals ------------------------------------------------------------
+     Matches Grove's Grays section: black -> text gray -> gray-darken-3/2/1
+     -> gray -> gray-lighten-1/2/3 -> white. Names here predate that page
+     (from ai-capability-finder) but the hex values already lined up 1:1
+     except where noted. */
+  --lt-black: #000000;
+  --lt-charcoal: #454545; /* Grove "text gray" */
   --lt-white: #ffffff;
-  --lt-gray: #f6f7f7;
-  --lt-gray-light-2: #e3e6e8;
-  --lt-gray-300: #c6cdd0;
-  --lt-gray-500: #848e92;
+  --lt-gray: #f6f7f7; /* Grove gray-lighten-3 */
+  --lt-gray-light-2: #e3e6e8; /* Grove gray-lighten-2 */
+  --lt-gray-300: #c6cdd0; /* Grove gray-lighten-1 */
+  --lt-gray-400: #a0acb1; /* Grove gray */
+  --lt-gray-500: #848e92; /* Grove gray-darken-1 */
   --lt-text: #101f30;
-  --lt-text-secondary: #4b5155;
-  --lt-text-muted: #687073;
+  --lt-text-secondary: #4b5155; /* Grove gray-darken-3 */
+  --lt-text-muted: #687073; /* Grove gray-darken-2 */
 
   /* ---- Semantic roles ----------------------------------------------------- */
   --lt-color-primary: var(--lt-blue);

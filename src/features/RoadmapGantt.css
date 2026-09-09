@@ -1,3 +1,14 @@
+/* Single source of truth for status color, shared by the count pills, the
+   Gantt bars, and the initiative name text -- so all three always agree on
+   what "backlog/in development/completed" looks like. In-development uses
+   the darker green (not the brighter brand green) because white text on
+   the brighter green reads too low-contrast/washed-out at small sizes. */
+:root {
+  --rg-status-backlog: var(--lt-red);
+  --rg-status-in_development: var(--lt-green-darken-2);
+  --rg-status-completed: var(--lt-deep-blue);
+}
+
 .rg-toolbar__grid {
   display: flex;
   flex-wrap: wrap;
@@ -152,14 +163,13 @@
   color: #fff;
 }
 .rg-statuscount--backlog {
-  background: var(--lt-red);
+  background: var(--rg-status-backlog);
 }
 .rg-statuscount--in_development {
-  background: var(--lt-green);
-  color: var(--lt-deep-blue);
+  background: var(--rg-status-in_development);
 }
 .rg-statuscount--completed {
-  background: var(--lt-deep-blue);
+  background: var(--rg-status-completed);
 }
 .rg-statuscount--total {
   background: var(--lt-white);
@@ -195,7 +205,7 @@
   align-items: center;
   gap: var(--lt-space-2);
   padding: 0 var(--lt-space-4);
-  background: var(--lt-text-secondary);
+  background: var(--lt-charcoal);
   border-top: 1px solid var(--lt-color-border);
   border-bottom: 1px solid var(--lt-color-border);
   font-size: var(--lt-fs-xs);
@@ -205,7 +215,7 @@
   color: #fff;
 }
 .rg-teamband--filler {
-  background: var(--lt-text-secondary);
+  background: var(--lt-charcoal);
   border-top: 1px solid var(--lt-color-border);
   border-bottom: 1px solid var(--lt-color-border);
 }
@@ -235,13 +245,13 @@
 /* Name color mirrors the bar/status-pill colors, so scanning the name
    column alone tells you a row's status. */
 .rg-labelcell--backlog {
-  color: var(--lt-red);
+  color: var(--rg-status-backlog);
 }
 .rg-labelcell--in_development {
-  color: var(--lt-green-darken-2);
+  color: var(--rg-status-in_development);
 }
 .rg-labelcell--completed {
-  color: var(--lt-deep-blue);
+  color: var(--rg-status-completed);
 }
 .rg-labelcell__text {
   flex: 1;
@@ -329,16 +339,16 @@
   height: 28px;
   margin: 0 4px;
   border-radius: var(--lt-radius-pill);
-  border: 1px solid transparent;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  box-shadow: 0 1px 2px rgba(16, 31, 48, 0.06);
-  transition: transform var(--lt-transition), box-shadow var(--lt-transition), border-color var(--lt-transition);
+  box-shadow: 0 1px 2px rgba(16, 31, 48, 0.18);
+  transition: filter var(--lt-transition), transform var(--lt-transition), box-shadow var(--lt-transition);
 }
 .rg-bar:hover {
+  filter: brightness(1.1);
   transform: translateY(-1px) scale(1.02);
   box-shadow: var(--lt-shadow-md);
 }
@@ -346,40 +356,20 @@
   padding: 0 10px;
   font-size: var(--lt-fs-xs);
   font-weight: var(--lt-fw-bold);
+  color: #fff;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-/* Soft, badge-style fills (light background + a darker matching border and
-   text) instead of solid saturated blocks -- same pattern as .lt-badge, so
-   a timeline full of bars doesn't read as a wall of bright color. */
+/* Solid fills using the same status colors as the count pills and the
+   initiative name text (see :root vars above), so color means the same
+   thing everywhere on this screen. */
 .rg-bar--backlog {
-  background: var(--lt-red-lighten-4);
-  border-color: #f0c3cc;
-}
-.rg-bar--backlog .rg-bar__status {
-  color: var(--lt-red-darken);
+  background: var(--rg-status-backlog);
 }
 .rg-bar--in_development {
-  background: var(--lt-green-lighten-3);
-  border-color: var(--lt-green-lighten-2);
-}
-.rg-bar--in_development .rg-bar__status {
-  color: var(--lt-green-darken-2);
+  background: var(--rg-status-in_development);
 }
 .rg-bar--completed {
-  background: var(--lt-blue-lighten-4);
-  border-color: var(--lt-blue-lighten-2);
-}
-.rg-bar--completed .rg-bar__status {
-  color: var(--lt-deep-blue);
-}
-.rg-bar:hover.rg-bar--backlog {
-  border-color: var(--lt-red);
-}
-.rg-bar:hover.rg-bar--in_development {
-  border-color: var(--lt-green-darken-2);
-}
-.rg-bar:hover.rg-bar--completed {
-  border-color: var(--lt-deep-blue);
+  background: var(--rg-status-completed);
 }
