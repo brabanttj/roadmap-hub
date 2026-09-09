@@ -12,6 +12,10 @@
 .rg-toolbar__head {
   display: flex;
 }
+.cf-toolbar.lt-card--pad {
+  padding: var(--lt-space-3) var(--lt-space-5);
+}
+
 .rg-toolbar__toggle {
   display: flex;
   align-items: center;
@@ -19,7 +23,7 @@
   border: none;
   background: none;
   padding: 0;
-  margin-bottom: var(--lt-space-3);
+  margin-bottom: var(--lt-space-2);
   font-family: var(--lt-font-body);
   font-size: var(--lt-fs-sm);
   font-weight: var(--lt-fw-bold);

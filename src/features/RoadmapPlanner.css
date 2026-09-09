@@ -24,27 +24,34 @@
   opacity: 0.55;
 }
 
+/* Single line, breadcrumb-style: brand + org context read small and
+   muted, "Roadmap" itself carries the visual weight in the display
+   typeface. The rotating quote (see RoadmapPlanner.jsx) moved from its own
+   line to a native title-attribute tooltip on hover -- keeps the fun
+   without spending any vertical space on it. */
 .rp-header {
-  text-align: center;
-  padding: var(--lt-space-2) 0 var(--lt-space-4);
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: var(--lt-space-2);
+  padding: var(--lt-space-4) 0 var(--lt-space-3);
+  cursor: help;
+}
+.rp-header__crumb {
+  font-size: var(--lt-fs-sm);
+  font-weight: var(--lt-fw-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--lt-text-muted);
+}
+.rp-header__sep {
+  color: var(--lt-gray-300);
 }
 .rp-header__title {
-  font-size: clamp(1.5rem, 3vw, 2.25rem);
-  margin: var(--lt-space-2) auto var(--lt-space-2);
-}
-.rp-header__sub {
-  min-height: 1.6em;
-  margin: 0 auto;
-  color: var(--lt-text-secondary);
-  font-size: clamp(0.8rem, 1.4vw, var(--lt-fs-md));
-  font-style: italic;
-  white-space: nowrap;
-  animation: rp-quote-fade 500ms ease;
-}
-@keyframes rp-quote-fade {
-  from {
-    opacity: 0;
-  }
+  font-family: var(--lt-font-display);
+  font-size: clamp(1.25rem, 2.4vw, 1.75rem);
+  color: var(--lt-deep-blue);
 }
 
 /* Tabs — shared with the empty-state / banner classes below across every

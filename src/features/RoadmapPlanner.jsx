@@ -85,12 +85,12 @@ export default function RoadmapPlanner() {
       <div className="rp-leafmark" aria-hidden="true">
         <Icon name="brandLeaf" preserveAspectRatio="xMidYMid meet" />
       </div>
-      <header className="rp-header">
-        <span className="lt-eyebrow">LendingTree Insurance Division</span>
-        <h1 className="rp-header__title">Roadmap Hub</h1>
-        <p className="rp-header__sub" key={quoteIndex}>
-          {ROADMAP_QUOTES[quoteIndex]}
-        </p>
+      <header className="rp-header" title={ROADMAP_QUOTES[quoteIndex]}>
+        <span className="rp-header__crumb">LendingTree Insurance Division</span>
+        <span className="rp-header__sep" aria-hidden="true">/</span>
+        <span className="rp-header__crumb">Product Management</span>
+        <span className="rp-header__sep" aria-hidden="true">/</span>
+        <span className="rp-header__title">Roadmap</span>
       </header>
 
       {error && (
