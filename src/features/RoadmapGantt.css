@@ -192,9 +192,15 @@
   gap: 4px;
 }
 .rg-statuscounts__op {
-  color: var(--lt-gray-300);
-  font-size: 10px;
+  color: var(--lt-text-muted);
+  font-size: 11px;
   font-weight: var(--lt-fw-black);
+}
+/* On the green team/focus-area bands, the operators need to be bold white
+   to read against that background instead of the muted gray used on the
+   plain white header cell. */
+.rg-teamband .rg-statuscounts__op {
+  color: #fff;
 }
 .rg-statuscount {
   display: inline-grid;

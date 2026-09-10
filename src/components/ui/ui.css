@@ -75,11 +75,11 @@
 }
 
 .lt-btn--accent {
-  background-color: var(--lt-green);
+  background-color: var(--lt-green-vivid);
   color: var(--lt-deep-blue);
 }
 .lt-btn--accent:hover {
-  background-color: var(--lt-green-vivid);
+  background-color: var(--lt-green);
 }
 
 .lt-btn--secondary {

@@ -86,6 +86,13 @@
   border-bottom-color: var(--lt-green);
 }
 
+.rp-settings {
+  margin-bottom: var(--lt-space-4);
+}
+.rp-settings__title {
+  margin: 0 0 var(--lt-space-3);
+}
+
 /* Tabs — shared with the empty-state / banner classes below across every
    feature tab (Roadmap, Submit, Review, Taxonomy). */
 .cf-tabs {

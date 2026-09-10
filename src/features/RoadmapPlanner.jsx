@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { Card, Icon } from "../components/ui/index.js";
-import RoadmapGantt from "./RoadmapGantt.jsx";
+import { Card, Icon, Select, MultiSelect } from "../components/ui/index.js";
+import RoadmapGantt, { EXTRA_COLUMN_OPTIONS } from "./RoadmapGantt.jsx";
 import IdeaForm from "./IdeaForm.jsx";
 import ReviewQueue from "./ReviewQueue.jsx";
 import RejectedArchive from "./RejectedArchive.jsx";
@@ -38,6 +38,17 @@ export default function RoadmapPlanner() {
   const [view, setView] = useState("roadmap"); // roadmap | submit | review | rejected | archived
   const [exporting, setExporting] = useState(false);
   const [quoteIndex, setQuoteIndex] = useState(0);
+
+  // Roadmap display settings -- how the Gantt groups/sorts/columns itself.
+  // Owned here (not inside RoadmapGantt) since they now live under the
+  // Settings section rather than the Roadmap view itself.
+  const [groupBy, setGroupBy] = useState("team"); // "team" | "focusArea"
+  const [sortMode, setSortMode] = useState("priority"); // "priority" | "startDate"
+  const [extraColumns, setExtraColumns] = useState([]); // [] = none of the optional columns
+  const [showCounts, setShowCounts] = useState(true);
+  // Priority is a per-team drag order -- meaningless once grouped by Focus
+  // Area, so that grouping always sorts by start date instead.
+  const sortModeEffective = groupBy === "focusArea" ? "startDate" : sortMode;
 
   useEffect(() => {
     const id = setInterval(() => {
@@ -210,6 +221,10 @@ export default function RoadmapPlanner() {
           onUpsert={upsertInitiative}
           onRemove={removeInitiative}
           onReorder={reorderInitiatives}
+          groupBy={groupBy}
+          sortMode={sortMode}
+          extraColumns={extraColumns}
+          showCounts={showCounts}
         />
       )}
       {section === "initiatives" && view === "submit" && (
@@ -237,12 +252,44 @@ export default function RoadmapPlanner() {
       )}
 
       {section === "settings" && (
-        <ManageTaxonomy
-          focusAreas={focusAreas}
-          teams={teams}
-          setFocusAreas={setFocusAreas}
-          setTeams={setTeams}
-        />
+        <>
+          <Card className="cf-toolbar rp-settings">
+            <h3 className="rp-settings__title">Roadmap display</h3>
+            <div className="rg-toolbar__grid">
+              <Select value={groupBy} onChange={(e) => setGroupBy(e.target.value)} aria-label="Group by">
+                <option value="team">Group by Team</option>
+                <option value="focusArea">Group by Focus Area</option>
+              </Select>
+              <Select
+                value={sortModeEffective}
+                onChange={(e) => setSortMode(e.target.value)}
+                disabled={groupBy === "focusArea"}
+                aria-label="Sort by"
+              >
+                <option value="priority" disabled={groupBy === "focusArea"}>
+                  Sort by Priority
+                </option>
+                <option value="startDate">Sort by Start Date</option>
+              </Select>
+              <MultiSelect
+                label="Columns"
+                options={EXTRA_COLUMN_OPTIONS}
+                selected={extraColumns}
+                onChange={setExtraColumns}
+              />
+              <label className="rg-settings__checkbox">
+                <input type="checkbox" checked={showCounts} onChange={(e) => setShowCounts(e.target.checked)} />
+                Show initiative counts
+              </label>
+            </div>
+          </Card>
+          <ManageTaxonomy
+            focusAreas={focusAreas}
+            teams={teams}
+            setFocusAreas={setFocusAreas}
+            setTeams={setTeams}
+          />
+        </>
       )}
 
       {exporting && <ExportModal initiatives={initiatives} onClose={() => setExporting(false)} />}

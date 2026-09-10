@@ -1,5 +1,5 @@
 import { Fragment, useMemo, useRef, useState } from "react";
-import { Card, Input, Select, MultiSelect, Button, IllustrationBadge } from "../components/ui/index.js";
+import { Card, Input, MultiSelect, Button, IllustrationBadge } from "../components/ui/index.js";
 import { usePasswordGate } from "../lib/PasswordGate.jsx";
 import { MONTH_NAMES, STATUS_LABEL } from "../lib/text.js";
 import { useInitiativeTooltip } from "./InitiativeDetails.jsx";
@@ -40,7 +40,7 @@ const BODY_ROW_H = 44;
 // (Team/Focus Area) column always show; these are added alongside them,
 // never in place of them. Widths are wider for the free-text ones so they
 // don't need to be squinted at.
-const EXTRA_COLUMN_OPTIONS = [
+export const EXTRA_COLUMN_OPTIONS = [
   { value: "summary", label: "Summary", width: 240 },
   { value: "impactedTeams", label: "Impacted Teams", width: 180 },
   { value: "impactedProducts", label: "Impacted Products", width: 180 },
@@ -107,19 +107,25 @@ function occupiedIndices(item, activeColumns) {
   return out;
 }
 
-export default function RoadmapGantt({ initiatives, focusAreas, teams, onUpsert, onRemove, onReorder }) {
+export default function RoadmapGantt({
+  initiatives,
+  focusAreas,
+  teams,
+  onUpsert,
+  onRemove,
+  onReorder,
+  groupBy,
+  sortMode,
+  extraColumns,
+  showCounts,
+}) {
   const guard = usePasswordGate();
   const [search, setSearch] = useState("");
   const [focusAreaFilter, setFocusAreaFilter] = useState([]); // [] = all
   const [teamFilter, setTeamFilter] = useState([]); // [] = all
   const [statusFilter, setStatusFilter] = useState([]); // [] = all
   const [columnFilter, setColumnFilter] = useState([]); // [] = current year's months + backlog
-  const [groupBy, setGroupBy] = useState("team"); // "team" | "focusArea"
-  const [sortMode, setSortMode] = useState("priority"); // "priority" | "startDate" -- see `rows` below
   const [filtersOpen, setFiltersOpen] = useState(true);
-  const [settingsOpen, setSettingsOpen] = useState(false);
-  const [extraColumns, setExtraColumns] = useState([]); // [] = none of the optional columns
-  const [showCounts, setShowCounts] = useState(true);
   const [editing, setEditing] = useState(null); // { initiative } | { isNew: true } | null
   const { show: showTooltip, hide: hideTooltip, portal: tooltipPortal } = useInitiativeTooltip();
   const [scrollTop, setScrollTop] = useState(0); // drives which group's sticky band is shown
@@ -409,47 +415,6 @@ export default function RoadmapGantt({ initiatives, focusAreas, teams, onUpsert,
           <Button variant="accent" onClick={guard(() => setEditing({ isNew: true }))}>
             + Add initiative
           </Button>
-        </div>
-        )}
-
-        <div className="rg-toolbar__head">
-          <button
-            type="button"
-            className="rg-toolbar__toggle"
-            onClick={() => setSettingsOpen((v) => !v)}
-            aria-expanded={settingsOpen}
-          >
-            <span aria-hidden="true">{settingsOpen ? "▾" : "▸"}</span>
-            Settings
-          </button>
-        </div>
-        {settingsOpen && (
-        <div className="rg-toolbar__grid">
-          <Select value={groupBy} onChange={(e) => setGroupBy(e.target.value)} aria-label="Group by">
-            <option value="team">Group by Team</option>
-            <option value="focusArea">Group by Focus Area</option>
-          </Select>
-          <Select
-            value={sortModeEffective}
-            onChange={(e) => setSortMode(e.target.value)}
-            disabled={groupBy === "focusArea"}
-            aria-label="Sort by"
-          >
-            <option value="priority" disabled={groupBy === "focusArea"}>
-              Sort by Priority
-            </option>
-            <option value="startDate">Sort by Start Date</option>
-          </Select>
-          <MultiSelect
-            label="Columns"
-            options={EXTRA_COLUMN_OPTIONS}
-            selected={extraColumns}
-            onChange={setExtraColumns}
-          />
-          <label className="rg-settings__checkbox">
-            <input type="checkbox" checked={showCounts} onChange={(e) => setShowCounts(e.target.checked)} />
-            Show initiative counts
-          </label>
         </div>
         )}
       </Card>
