@@ -388,9 +388,10 @@
   color: var(--lt-blue);
 }
 /* Discussion button -- opens the chat modal directly, no password gate,
-   since asking/answering a question isn't a mutating action. */
+   since asking/answering a question isn't a mutating action. An SVG icon
+   (not an emoji) so its color is actually controllable: neutral/muted
+   when there's no discussion yet, solid green once messages exist. */
 .rg-labelcell__chat {
-  position: relative;
   flex: 0 0 auto;
   display: grid;
   place-items: center;
@@ -400,35 +401,20 @@
   border: none;
   border-radius: 50%;
   background: none;
-  font-size: 11px;
-  line-height: 1;
+  color: var(--lt-gray-300);
   cursor: pointer;
-  opacity: 0.5;
-  filter: grayscale(1);
 }
 .rg-labelcell__chat:hover,
 .rg-labelcell__chat:focus-visible {
-  opacity: 0.8;
   background: var(--lt-gray);
+  color: var(--lt-text-muted);
 }
-/* Existing discussion -- full color (the grayscale filter above is what
-   mutes an empty state, since the emoji glyph ignores CSS `color`) plus a
-   small dot badge, so a row with messages already on it visibly stands
-   out from an empty one. */
 .rg-labelcell__chat--active {
-  opacity: 1;
-  filter: none;
+  color: var(--lt-green-vivid);
 }
-.rg-labelcell__chat--active::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  right: 0;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--lt-green-vivid);
-  border: 1px solid var(--lt-white);
+.rg-labelcell__chat--active:hover,
+.rg-labelcell__chat--active:focus-visible {
+  background: var(--lt-blue-lighten-4);
 }
 /* Title -- the only click-to-edit target, with an underline-on-hover so
    it visibly reads as "this text is a link to edit", not just a label. */

@@ -775,7 +775,15 @@ function SidebarRow({
           title={item.chat?.length ? `${item.chat.length} message${item.chat.length === 1 ? "" : "s"}` : "Ask a question / view discussion"}
           onClick={() => setChatting(item)}
         >
-          💬
+          <svg viewBox="0 0 20 20" width="13" height="13" aria-hidden="true">
+            <path
+              fill={item.chat?.length ? "currentColor" : "none"}
+              stroke="currentColor"
+              strokeWidth={item.chat?.length ? "0" : "1.4"}
+              strokeLinejoin="round"
+              d="M10 2.5c-4.42 0-8 3.08-8 6.88 0 2.1 1.1 3.98 2.86 5.26-.1.9-.42 1.98-1.1 3.02a.5.5 0 0 0 .58.76c1.7-.6 2.98-1.34 3.86-1.98.55.1 1.14.16 1.8.16 4.42 0 8-3.08 8-6.88s-3.58-6.88-8-6.88Z"
+            />
+          </svg>
         </button>
         <button type="button" className="rg-labelcell__titlebtn" onClick={onEdit} title="Click to edit">
           <span className="rg-labelcell__text">{item.title}</span>
