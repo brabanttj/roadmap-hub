@@ -4,6 +4,7 @@ import { usePasswordGate } from "../lib/PasswordGate.jsx";
 import { MONTH_NAMES, STATUS_LABEL } from "../lib/text.js";
 import { useInitiativeTooltip } from "./InitiativeDetails.jsx";
 import InitiativeModal from "./InitiativeModal.jsx";
+import InitiativeChatModal from "./InitiativeChatModal.jsx";
 import "./RoadmapGantt.css";
 
 // Excluded from the Gantt entirely -- ideas haven't been reviewed yet, and
@@ -121,6 +122,7 @@ export default function RoadmapGantt({ initiatives, focusAreas, teams, onUpsert,
   const [extraColumns, setExtraColumns] = useState([]); // [] = none of the optional columns
   const [showCounts, setShowCounts] = useState(true);
   const [editing, setEditing] = useState(null); // { initiative } | { isNew: true } | null
+  const [chatting, setChatting] = useState(null); // initiative currently showing its Discussion modal, or null
   const { show: showTooltip, hide: hideTooltip, portal: tooltipPortal } = useInitiativeTooltip();
   const [scrollTop, setScrollTop] = useState(0); // drives which group's sticky band is shown
   const [dragOverId, setDragOverId] = useState(null); // item id currently being dragged over -- drop-target highlight
@@ -578,6 +580,7 @@ export default function RoadmapGantt({ initiatives, focusAreas, teams, onUpsert,
                   extraColumns={visibleExtraColumns}
                   guard={guard}
                   setEditing={setEditing}
+                  setChatting={setChatting}
                   showTooltip={showTooltip}
                   hideTooltip={hideTooltip}
                   reorderable={reorderable}
@@ -660,6 +663,10 @@ export default function RoadmapGantt({ initiatives, focusAreas, teams, onUpsert,
         />
       )}
 
+      {chatting && (
+        <InitiativeChatModal initiative={chatting} onClose={() => setChatting(null)} onUpdated={onUpsert} />
+      )}
+
       {tooltipPortal}
     </>
   );
@@ -672,6 +679,7 @@ function SidebarRow({
   extraColumns,
   guard,
   setEditing,
+  setChatting,
   showTooltip,
   hideTooltip,
   reorderable,
@@ -759,6 +767,15 @@ function SidebarRow({
           onClick={showTooltip(item)}
         >
           ⓘ
+        </button>
+        <button
+          type="button"
+          className="rg-labelcell__chat"
+          aria-label={`Discuss: ${item.title}`}
+          title="Ask a question / view discussion"
+          onClick={() => setChatting(item)}
+        >
+          💬
         </button>
         <button type="button" className="rg-labelcell__titlebtn" onClick={onEdit} title="Click to edit">
           <span className="rg-labelcell__text">{item.title}</span>

@@ -90,6 +90,12 @@
   padding-top: var(--lt-space-2);
   border-top: 1px solid var(--lt-color-border);
 }
+/* Standalone modal already has its own title/subtitle -- no need for a
+   redundant divider above the thread. */
+.im-chat--standalone {
+  padding-top: 0;
+  border-top: none;
+}
 .im-chat__list {
   list-style: none;
   margin: 0;

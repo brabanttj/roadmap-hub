@@ -387,6 +387,28 @@
   background: var(--lt-blue-lighten-4);
   color: var(--lt-blue);
 }
+/* Discussion button -- opens the chat modal directly, no password gate,
+   since asking/answering a question isn't a mutating action. */
+.rg-labelcell__chat {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: none;
+  font-size: 11px;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0.55;
+}
+.rg-labelcell__chat:hover,
+.rg-labelcell__chat:focus-visible {
+  opacity: 1;
+  background: var(--lt-gray);
+}
 /* Title -- the only click-to-edit target, with an underline-on-hover so
    it visibly reads as "this text is a link to edit", not just a label. */
 .rg-labelcell__titlebtn {
