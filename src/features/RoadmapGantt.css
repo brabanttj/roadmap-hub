@@ -127,24 +127,6 @@
   background: var(--lt-gray);
 }
 
-/* Drag left/right to trade width between the Initiative/Focus Area sidebar
-   and the date grid -- narrow the sidebar to fit more months on screen, or
-   widen it to read long column values without truncation. A slim strip
-   that only reveals itself as an obvious grab target on hover, so it
-   doesn't visually compete with the real border it sits on. */
-.rg-resizehandle {
-  flex: 0 0 6px;
-  cursor: col-resize;
-  background: transparent;
-  border-left: 1px solid transparent;
-  border-right: 1px solid transparent;
-}
-.rg-resizehandle:hover {
-  background: var(--lt-blue-lighten-4);
-  border-left-color: var(--lt-blue-lighten-2);
-  border-right-color: var(--lt-blue-lighten-2);
-}
-
 .rg-sidebargrid {
   display: grid;
   grid-template-columns: 220px 150px;

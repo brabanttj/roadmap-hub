@@ -40,23 +40,20 @@ const BODY_ROW_H = 44;
 // (Team/Focus Area) column always show; these are added alongside them,
 // never in place of them. Widths are wider for the free-text ones so they
 // don't need to be squinted at.
+// Summary and Notes deliberately aren't offered here -- free text long
+// enough that no reasonable fixed column width shows all of it, unlike
+// Impacted Teams/Products which are short tag lists.
 export const EXTRA_COLUMN_OPTIONS = [
-  { value: "summary", label: "Summary", width: 240 },
   { value: "impactedTeams", label: "Impacted Teams", width: 180 },
   { value: "impactedProducts", label: "Impacted Products", width: 180 },
-  { value: "notes", label: "Notes", width: 240 },
 ];
 
 function extraColumnValue(item, key) {
   switch (key) {
-    case "summary":
-      return item.summary || "—";
     case "impactedTeams":
       return item.impactedTeams?.length ? item.impactedTeams.join(", ") : "—";
     case "impactedProducts":
       return item.impactedProducts?.length ? item.impactedProducts.join(", ") : "—";
-    case "notes":
-      return item.notes?.length ? item.notes.map((n) => n.body).join(" | ") : "—";
     default:
       return "—";
   }
@@ -127,7 +124,6 @@ export default function RoadmapGantt({ initiatives, focusAreas, teams, onUpsert,
   const { show: showTooltip, hide: hideTooltip, portal: tooltipPortal } = useInitiativeTooltip();
   const [scrollTop, setScrollTop] = useState(0); // drives which group's sticky band is shown
   const [dragOverId, setDragOverId] = useState(null); // item id currently being dragged over -- drop-target highlight
-  const [sidebarWidthOverride, setSidebarWidthOverride] = useState(null); // null = fit exactly the visible columns
 
   const sidebarRef = useRef(null);
   const hscrollRef = useRef(null);
@@ -183,25 +179,6 @@ export default function RoadmapGantt({ initiatives, focusAreas, teams, onUpsert,
       e.stopPropagation();
       panRef.current.moved = false;
     }
-  };
-
-  // Drag the divider between the Initiative/Focus Area sidebar and the
-  // date grid to trade width between them -- shrink the sidebar to fit
-  // more months on screen at once, or widen it to read long column values
-  // (Summary, Notes, ...) without truncation.
-  const onSidebarResizeMouseDown = (e) => {
-    e.preventDefault();
-    const startX = e.clientX;
-    const startWidth = sidebarWidth;
-    const onMove = (ev) => {
-      setSidebarWidthOverride(Math.max(220, Math.min(1000, startWidth + (ev.clientX - startX))));
-    };
-    const onUp = () => {
-      document.removeEventListener("mousemove", onMove);
-      document.removeEventListener("mouseup", onUp);
-    };
-    document.addEventListener("mousemove", onMove);
-    document.addEventListener("mouseup", onUp);
   };
 
   const teamOrder = teams.map((t) => t.name);
@@ -408,16 +385,16 @@ export default function RoadmapGantt({ initiatives, focusAreas, teams, onUpsert,
   const bodyRowCount = rows.length;
   const rowsTemplate = `${HEAD_ROW_H}px repeat(${bodyRowCount}, ${BODY_ROW_H}px)`;
   const lastRowLine = bodyRowCount + 2;
-  const sidebarColTemplate = `220px 150px ${extraColumns
+  // Sidebar width is always exactly the sum of whatever columns are
+  // checked in the picker -- appears/disappears live as they're
+  // toggled, with no separate control and no possibility of leftover
+  // whitespace since nothing is manually resized.
+  const visibleExtraColumns = extraColumns;
+  const sidebarColTemplate = `220px 150px ${visibleExtraColumns
     .map((k) => `${EXTRA_COLUMN_OPTIONS.find((o) => o.value === k).width}px`)
     .join(" ")}`.trim();
-  // Natural width needed to fit every visible sidebar column -- the panel
-  // defaults to exactly this (so nothing clips when extra columns are
-  // turned on) but the user can drag it narrower/wider from there (see
-  // the resize handle + sidebarWidth below).
-  const sidebarNaturalWidth =
-    220 + 150 + extraColumns.reduce((sum, k) => sum + EXTRA_COLUMN_OPTIONS.find((o) => o.value === k).width, 0);
-  const sidebarWidth = Math.max(220, sidebarWidthOverride ?? sidebarNaturalWidth);
+  const sidebarWidth =
+    220 + 150 + visibleExtraColumns.reduce((sum, k) => sum + EXTRA_COLUMN_OPTIONS.find((o) => o.value === k).width, 0);
 
   // Which group band should be floating, pinned just under the column
   // headers -- the last group whose own row has scrolled up underneath
@@ -569,7 +546,7 @@ export default function RoadmapGantt({ initiatives, focusAreas, teams, onUpsert,
               <div className="rg-headcell rg-headcell--focus" style={{ gridRow: 1, gridColumn: 2 }}>
                 {secondaryLabel}
               </div>
-              {extraColumns.map((key, i) => (
+              {visibleExtraColumns.map((key, i) => (
                 <div key={key} className="rg-headcell rg-headcell--focus" style={{ gridRow: 1, gridColumn: i + 3 }}>
                   {EXTRA_COLUMN_OPTIONS.find((o) => o.value === key).label}
                 </div>
@@ -580,7 +557,7 @@ export default function RoadmapGantt({ initiatives, focusAreas, teams, onUpsert,
                   row={r}
                   gridRow={idx + 2}
                   secondaryField={secondaryField}
-                  extraColumns={extraColumns}
+                  extraColumns={visibleExtraColumns}
                   guard={guard}
                   setEditing={setEditing}
                   showTooltip={showTooltip}
@@ -605,14 +582,6 @@ export default function RoadmapGantt({ initiatives, focusAreas, teams, onUpsert,
             </div>
           </div>
 
-          <div
-            className="rg-resizehandle"
-            role="separator"
-            aria-orientation="vertical"
-            aria-label="Resize the initiative columns"
-            title="Drag to resize"
-            onMouseDown={onSidebarResizeMouseDown}
-          />
 
           <div
             className="rg-hscroll lt-scroll"
