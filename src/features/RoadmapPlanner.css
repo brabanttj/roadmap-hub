@@ -54,6 +54,38 @@
   color: var(--lt-deep-blue);
 }
 
+/* Primary sections -- Initiatives (the working roadmap + its intake/review
+   pipeline) vs. Settings (taxonomy admin, and anything else app-wide that
+   isn't itself a piece of roadmap content). One level above the `cf-tabs`
+   sub-navigation below, bigger and bolder so the hierarchy reads at a
+   glance -- underlined text rather than a pill, closer to a section
+   heading than a button. */
+.rp-sections {
+  display: flex;
+  gap: var(--lt-space-5);
+  margin-bottom: var(--lt-space-4);
+  padding-bottom: var(--lt-space-3);
+  border-bottom: 1px solid var(--lt-color-border);
+}
+.rp-section {
+  padding: 0 0 var(--lt-space-2);
+  border: none;
+  border-bottom: 3px solid transparent;
+  background: none;
+  font-family: var(--lt-font-display);
+  font-size: var(--lt-fs-lg);
+  color: var(--lt-text-muted);
+  cursor: pointer;
+  transition: color var(--lt-transition), border-color var(--lt-transition);
+}
+.rp-section:hover {
+  color: var(--lt-blue);
+}
+.rp-section--on {
+  color: var(--lt-deep-blue);
+  border-bottom-color: var(--lt-green);
+}
+
 /* Tabs — shared with the empty-state / banner classes below across every
    feature tab (Roadmap, Submit, Review, Taxonomy). */
 .cf-tabs {

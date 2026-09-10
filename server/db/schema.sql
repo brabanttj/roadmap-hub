@@ -82,3 +82,19 @@ ALTER TABLE initiatives ADD COLUMN IF NOT EXISTS impacted_products TEXT[] NOT NU
 ALTER TABLE initiatives ADD COLUMN IF NOT EXISTS archived BOOLEAN NOT NULL DEFAULT FALSE;
 ALTER TABLE initiatives ADD COLUMN IF NOT EXISTS archived_by TEXT NOT NULL DEFAULT '';
 ALTER TABLE initiatives ADD COLUMN IF NOT EXISTS archived_at TIMESTAMPTZ;
+
+-- ---------------------------------------------------------------------------
+-- Free-form notes on an initiative -- separate from reviewer_notes (which
+-- is a single rejection reason set once by a reviewer). Multiple notes per
+-- initiative, each independently addable/editable/deletable, e.g. status
+-- check-ins or context that doesn't belong in any other fixed field.
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS initiative_notes (
+  id             SERIAL PRIMARY KEY,
+  initiative_id  INT NOT NULL REFERENCES initiatives (id) ON DELETE CASCADE,
+  body           TEXT NOT NULL,
+  author         TEXT NOT NULL DEFAULT '',
+  created_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at     TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS initiative_notes_initiative_idx ON initiative_notes (initiative_id);

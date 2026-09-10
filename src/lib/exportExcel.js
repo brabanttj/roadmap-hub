@@ -30,6 +30,7 @@ const COLUMNS = [
   { key: "reviewedBy", header: "Reviewed By" },
   { key: "reviewedAt", header: "Reviewed" },
   { key: "reviewerNotes", header: "Reviewer Notes" },
+  { key: "notes", header: "Notes" },
 ];
 
 function fmtDate(v) {
@@ -58,6 +59,7 @@ function toRow(item) {
     reviewedBy: item.reviewedBy || "",
     reviewedAt: fmtDate(item.reviewedAt),
     reviewerNotes: item.reviewerNotes || "",
+    notes: (item.notes || []).map((n) => n.body).join(" | "),
   };
 }
 
@@ -89,7 +91,7 @@ export async function exportRoadmapToExcel(initiatives, range = {}) {
   const sheet = XLSX.utils.json_to_sheet(rows, { header: COLUMNS.map((c) => c.key) });
   XLSX.utils.sheet_add_aoa(sheet, [COLUMNS.map((c) => c.header)], { origin: "A1" });
   sheet["!cols"] = COLUMNS.map((c) =>
-    ["summary", "currentState", "futureState", "successMetrics", "reviewerNotes"].includes(c.key)
+    ["summary", "currentState", "futureState", "successMetrics", "reviewerNotes", "notes"].includes(c.key)
       ? { wch: 40 }
       : { wch: 16 }
   );

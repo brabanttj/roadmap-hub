@@ -4,7 +4,6 @@ import { usePasswordGate } from "../lib/PasswordGate.jsx";
 import { MONTH_NAMES, STATUS_LABEL } from "../lib/text.js";
 import { useInitiativeTooltip } from "./InitiativeDetails.jsx";
 import InitiativeModal from "./InitiativeModal.jsx";
-import ExportModal from "./ExportModal.jsx";
 import "./RoadmapGantt.css";
 
 // Excluded from the Gantt entirely -- ideas haven't been reviewed yet, and
@@ -37,6 +36,32 @@ const DEFAULT_COLUMN_VALUES = [
 const HEAD_ROW_H = 34;
 const BODY_ROW_H = 44;
 
+// Optional, incremental sidebar columns -- Initiative and the secondary
+// (Team/Focus Area) column always show; these are added alongside them,
+// never in place of them. Widths are wider for the free-text ones so they
+// don't need to be squinted at.
+const EXTRA_COLUMN_OPTIONS = [
+  { value: "summary", label: "Summary", width: 240 },
+  { value: "impactedTeams", label: "Impacted Teams", width: 180 },
+  { value: "impactedProducts", label: "Impacted Products", width: 180 },
+  { value: "notes", label: "Notes", width: 240 },
+];
+
+function extraColumnValue(item, key) {
+  switch (key) {
+    case "summary":
+      return item.summary || "—";
+    case "impactedTeams":
+      return item.impactedTeams?.length ? item.impactedTeams.join(", ") : "—";
+    case "impactedProducts":
+      return item.impactedProducts?.length ? item.impactedProducts.join(", ") : "—";
+    case "notes":
+      return item.notes?.length ? item.notes.map((n) => n.body).join(" | ") : "—";
+    default:
+      return "—";
+  }
+}
+
 const monthIndex = (year, month) => year * 12 + (month - 1);
 
 // Counts by status, used for the colored count pills next to "Initiative"
@@ -50,11 +75,13 @@ function countByStatus(items) {
 function StatusCounts({ counts, total }) {
   return (
     <span className="rg-statuscounts">
-      {VISIBLE_STATUSES.map((s) => (
-        <span key={s} className={`rg-statuscount rg-statuscount--${s}`}>
-          {counts[s]}
+      {VISIBLE_STATUSES.map((s, i) => (
+        <span key={s} className="rg-statuscounts__group">
+          {i > 0 && <span className="rg-statuscounts__op">+</span>}
+          <span className={`rg-statuscount rg-statuscount--${s}`}>{counts[s]}</span>
         </span>
       ))}
+      <span className="rg-statuscounts__op">=</span>
       <span className="rg-statuscount rg-statuscount--total">{total}</span>
     </span>
   );
@@ -90,8 +117,10 @@ export default function RoadmapGantt({ initiatives, focusAreas, teams, onUpsert,
   const [groupBy, setGroupBy] = useState("team"); // "team" | "focusArea"
   const [sortMode, setSortMode] = useState("priority"); // "priority" | "startDate" -- see `rows` below
   const [filtersOpen, setFiltersOpen] = useState(true);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [extraColumns, setExtraColumns] = useState([]); // [] = none of the optional columns
+  const [showCounts, setShowCounts] = useState(true);
   const [editing, setEditing] = useState(null); // { initiative } | { isNew: true } | null
-  const [exporting, setExporting] = useState(false);
   const { show: showTooltip, hide: hideTooltip, portal: tooltipPortal } = useInitiativeTooltip();
   const [scrollTop, setScrollTop] = useState(0); // drives which group's sticky band is shown
   const [dragOverId, setDragOverId] = useState(null); // item id currently being dragged over -- drop-target highlight
@@ -311,6 +340,9 @@ export default function RoadmapGantt({ initiatives, focusAreas, teams, onUpsert,
   const bodyRowCount = rows.length;
   const rowsTemplate = `${HEAD_ROW_H}px repeat(${bodyRowCount}, ${BODY_ROW_H}px)`;
   const lastRowLine = bodyRowCount + 2;
+  const sidebarColTemplate = `220px 150px ${extraColumns
+    .map((k) => `${EXTRA_COLUMN_OPTIONS.find((o) => o.value === k).width}px`)
+    .join(" ")}`.trim();
 
   // Which group band should be floating, pinned just under the column
   // headers -- the last group whose own row has scrolled up underneath
@@ -374,6 +406,25 @@ export default function RoadmapGantt({ initiatives, focusAreas, teams, onUpsert,
             selected={columnFilter}
             onChange={setColumnFilter}
           />
+          <Button variant="accent" onClick={guard(() => setEditing({ isNew: true }))}>
+            + Add initiative
+          </Button>
+        </div>
+        )}
+
+        <div className="rg-toolbar__head">
+          <button
+            type="button"
+            className="rg-toolbar__toggle"
+            onClick={() => setSettingsOpen((v) => !v)}
+            aria-expanded={settingsOpen}
+          >
+            <span aria-hidden="true">{settingsOpen ? "▾" : "▸"}</span>
+            Settings
+          </button>
+        </div>
+        {settingsOpen && (
+        <div className="rg-toolbar__grid">
           <Select value={groupBy} onChange={(e) => setGroupBy(e.target.value)} aria-label="Group by">
             <option value="team">Group by Team</option>
             <option value="focusArea">Group by Focus Area</option>
@@ -389,12 +440,16 @@ export default function RoadmapGantt({ initiatives, focusAreas, teams, onUpsert,
             </option>
             <option value="startDate">Sort by Start Date</option>
           </Select>
-          <Button variant="secondary" onClick={() => setExporting(true)}>
-            Export to Excel
-          </Button>
-          <Button variant="accent" onClick={guard(() => setEditing({ isNew: true }))}>
-            + Add initiative
-          </Button>
+          <MultiSelect
+            label="Columns"
+            options={EXTRA_COLUMN_OPTIONS}
+            selected={extraColumns}
+            onChange={setExtraColumns}
+          />
+          <label className="rg-settings__checkbox">
+            <input type="checkbox" checked={showCounts} onChange={(e) => setShowCounts(e.target.checked)} />
+            Show initiative counts
+          </label>
         </div>
         )}
       </Card>
@@ -426,20 +481,26 @@ export default function RoadmapGantt({ initiatives, focusAreas, teams, onUpsert,
               breaks its header's vertical stickiness. Two independently
               vertically-scrolling panels, kept in sync, avoids that.) */}
           <div className="rg-sidebar" ref={sidebarRef} onScroll={onSidebarScroll}>
-            <div className="rg-sidebargrid" style={{ gridTemplateRows: rowsTemplate }}>
+            <div className="rg-sidebargrid" style={{ gridTemplateRows: rowsTemplate, gridTemplateColumns: sidebarColTemplate }}>
               <div className="rg-headcell rg-headcell--label" style={{ gridRow: 1, gridColumn: 1 }}>
                 <span>Initiative</span>
-                <StatusCounts counts={totalCounts} total={visible.length} />
+                {showCounts && <StatusCounts counts={totalCounts} total={visible.length} />}
               </div>
               <div className="rg-headcell rg-headcell--focus" style={{ gridRow: 1, gridColumn: 2 }}>
                 {secondaryLabel}
               </div>
+              {extraColumns.map((key, i) => (
+                <div key={key} className="rg-headcell rg-headcell--focus" style={{ gridRow: 1, gridColumn: i + 3 }}>
+                  {EXTRA_COLUMN_OPTIONS.find((o) => o.value === key).label}
+                </div>
+              ))}
               {rows.map((r, idx) => (
                 <SidebarRow
                   key={r.key}
                   row={r}
                   gridRow={idx + 2}
                   secondaryField={secondaryField}
+                  extraColumns={extraColumns}
                   guard={guard}
                   setEditing={setEditing}
                   showTooltip={showTooltip}
@@ -449,6 +510,7 @@ export default function RoadmapGantt({ initiatives, focusAreas, teams, onUpsert,
                   dragOverId={dragOverId}
                   setDragOverId={setDragOverId}
                   onDropReorder={dropReorder}
+                  showCounts={showCounts}
                 />
               ))}
               {activeGroup && (
@@ -457,7 +519,7 @@ export default function RoadmapGantt({ initiatives, focusAreas, teams, onUpsert,
                   style={{ gridRow: `2 / ${lastRowLine}`, gridColumn: "1 / -1", alignSelf: "start", top: HEAD_ROW_H }}
                 >
                   <span className="rg-teamband__name">{activeGroup.row.label}</span>
-                  <StatusCounts counts={activeGroup.row.counts} total={activeGroup.row.count} />
+                  {showCounts && <StatusCounts counts={activeGroup.row.counts} total={activeGroup.row.count} />}
                 </div>
               )}
             </div>
@@ -512,10 +574,9 @@ export default function RoadmapGantt({ initiatives, focusAreas, teams, onUpsert,
           onSave={save}
           onDelete={remove}
           onArchive={archive}
+          onNotesUpdated={onUpsert}
         />
       )}
-
-      {exporting && <ExportModal initiatives={initiatives} onClose={() => setExporting(false)} />}
 
       {tooltipPortal}
     </>
@@ -526,6 +587,7 @@ function SidebarRow({
   row,
   gridRow,
   secondaryField,
+  extraColumns,
   guard,
   setEditing,
   showTooltip,
@@ -535,12 +597,13 @@ function SidebarRow({
   dragOverId,
   setDragOverId,
   onDropReorder,
+  showCounts,
 }) {
   if (row.type === "group") {
     return (
       <div className="rg-teamband" style={{ gridRow, gridColumn: "1 / -1" }}>
         <span className="rg-teamband__name">{row.label}</span>
-        <StatusCounts counts={row.counts} total={row.count} />
+        {showCounts && <StatusCounts counts={row.counts} total={row.count} />}
       </div>
     );
   }
@@ -624,6 +687,11 @@ function SidebarRow({
       <div className="rg-focuscell" style={{ gridRow, gridColumn: 2 }}>
         {item[secondaryField] || "—"}
       </div>
+      {extraColumns.map((key, i) => (
+        <div key={key} className="rg-focuscell" style={{ gridRow, gridColumn: i + 3 }}>
+          {extraColumnValue(item, key)}
+        </div>
+      ))}
     </Fragment>
   );
 }

@@ -49,6 +49,22 @@
 .rg-toolbar__grid > :last-child {
   flex: 0 0 auto;
 }
+/* Two collapsible sections share this Card (Filters, then Settings) --
+   give the second header some separation from whatever's above it. */
+.rg-toolbar__grid + .rg-toolbar__head {
+  margin-top: var(--lt-space-3);
+  padding-top: var(--lt-space-3);
+  border-top: 1px solid var(--lt-color-border);
+}
+.rg-settings__checkbox {
+  display: flex;
+  align-items: center;
+  gap: var(--lt-space-2);
+  font-family: var(--lt-font-body);
+  font-size: var(--lt-fs-sm);
+  color: var(--lt-text-secondary);
+  cursor: pointer;
+}
 
 /* ---- Two-panel layout ------------------------------------------------------
    The Initiative/secondary-field columns are a separate, non-scrolling
@@ -167,7 +183,18 @@
    matching the Gantt bar colors so the two read as the same language. */
 .rg-statuscounts {
   display: inline-flex;
+  align-items: center;
   gap: 4px;
+}
+.rg-statuscounts__group {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.rg-statuscounts__op {
+  color: var(--lt-gray-300);
+  font-size: 10px;
+  font-weight: var(--lt-fw-black);
 }
 .rg-statuscount {
   display: inline-grid;

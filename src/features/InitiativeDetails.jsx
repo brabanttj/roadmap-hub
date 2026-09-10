@@ -32,6 +32,11 @@ export function initiativeFacts(item) {
     { label: "Reviewed by", value: item.reviewedBy || "—" },
     { label: "Reviewed", value: fmtDate(item.reviewedAt) },
     { label: "Reviewer notes", value: item.reviewerNotes || "—", wide: true },
+    {
+      label: "Notes",
+      value: item.notes?.length ? item.notes.map((n) => n.body).join(" | ") : "—",
+      wide: true,
+    },
     ...(item.archived
       ? [
           { label: "Archived by", value: item.archivedBy || "—" },

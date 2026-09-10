@@ -19,7 +19,15 @@ const INITIATIVE_COLUMNS = `
   reviewed_by AS "reviewedBy", reviewed_at AS "reviewedAt",
   reviewer_notes AS "reviewerNotes", sort_order AS "sortOrder",
   archived, archived_by AS "archivedBy",
-  to_char(archived_at, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS "archivedAt"
+  to_char(archived_at, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS "archivedAt",
+  (
+    SELECT COALESCE(json_agg(json_build_object(
+      'id', n.id, 'body', n.body, 'author', n.author,
+      'createdAt', to_char(n.created_at, 'YYYY-MM-DD"T"HH24:MI:SS"Z"'),
+      'updatedAt', to_char(n.updated_at, 'YYYY-MM-DD"T"HH24:MI:SS"Z"')
+    ) ORDER BY n.created_at), '[]'::json)
+    FROM initiative_notes n WHERE n.initiative_id = initiatives.id
+  ) AS notes
 `;
 
 // Month granularity, no week detail. A year/month pair is either both
@@ -288,6 +296,73 @@ router.post("/initiatives/:id/archive", async (req, res) => {
       [archived, archived ? archivedBy : "", id]
     );
     if (!rows.length) return res.status(404).json({ ok: false, error: "Initiative not found" });
+    res.json({ ok: true, initiative: rows[0] });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ ok: false, error: String(e.message || e) });
+  }
+});
+
+// ---- Notes: add/edit/delete free-form notes on an initiative ---------------
+// Separate from reviewer_notes (a single rejection reason). Each returns the
+// whole initiative (with its updated `notes` array) so the client can just
+// onUpsert it, same as every other mutation here.
+router.post("/initiatives/:id/notes", async (req, res) => {
+  const id = Number(req.params.id);
+  const body = String(req.body?.body || "").trim();
+  const author = String(req.body?.author || "").trim();
+  if (!Number.isInteger(id)) return res.status(400).json({ ok: false, error: "Invalid id" });
+  if (!body) return res.status(400).json({ ok: false, error: "Note text is required" });
+  try {
+    await pool.query(`INSERT INTO initiative_notes (initiative_id, body, author) VALUES ($1, $2, $3)`, [
+      id,
+      body,
+      author,
+    ]);
+    const { rows } = await pool.query(`SELECT ${INITIATIVE_COLUMNS} FROM initiatives WHERE id = $1`, [id]);
+    if (!rows.length) return res.status(404).json({ ok: false, error: "Initiative not found" });
+    res.json({ ok: true, initiative: rows[0] });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ ok: false, error: String(e.message || e) });
+  }
+});
+
+router.put("/initiatives/:id/notes/:noteId", async (req, res) => {
+  const id = Number(req.params.id);
+  const noteId = Number(req.params.noteId);
+  const body = String(req.body?.body || "").trim();
+  if (!Number.isInteger(id) || !Number.isInteger(noteId)) {
+    return res.status(400).json({ ok: false, error: "Invalid id" });
+  }
+  if (!body) return res.status(400).json({ ok: false, error: "Note text is required" });
+  try {
+    const { rowCount } = await pool.query(
+      `UPDATE initiative_notes SET body = $1, updated_at = now() WHERE id = $2 AND initiative_id = $3`,
+      [body, noteId, id]
+    );
+    if (!rowCount) return res.status(404).json({ ok: false, error: "Note not found" });
+    const { rows } = await pool.query(`SELECT ${INITIATIVE_COLUMNS} FROM initiatives WHERE id = $1`, [id]);
+    res.json({ ok: true, initiative: rows[0] });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ ok: false, error: String(e.message || e) });
+  }
+});
+
+router.delete("/initiatives/:id/notes/:noteId", async (req, res) => {
+  const id = Number(req.params.id);
+  const noteId = Number(req.params.noteId);
+  if (!Number.isInteger(id) || !Number.isInteger(noteId)) {
+    return res.status(400).json({ ok: false, error: "Invalid id" });
+  }
+  try {
+    const { rowCount } = await pool.query(`DELETE FROM initiative_notes WHERE id = $1 AND initiative_id = $2`, [
+      noteId,
+      id,
+    ]);
+    if (!rowCount) return res.status(404).json({ ok: false, error: "Note not found" });
+    const { rows } = await pool.query(`SELECT ${INITIATIVE_COLUMNS} FROM initiatives WHERE id = $1`, [id]);
     res.json({ ok: true, initiative: rows[0] });
   } catch (e) {
     console.error(e);
