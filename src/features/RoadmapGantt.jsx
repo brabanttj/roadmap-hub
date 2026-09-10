@@ -445,14 +445,14 @@ export default function RoadmapGantt({ initiatives, focusAreas, teams, onUpsert,
           </Select>
           <MultiSelect
             label="columns"
-            buttonLabel="Show columns"
+            buttonLabel="Show Columns"
             options={EXTRA_COLUMN_OPTIONS}
             selected={extraColumns}
             onChange={setExtraColumns}
           />
           <label className="rg-settings__checkbox">
             <input type="checkbox" checked={showCounts} onChange={(e) => setShowCounts(e.target.checked)} />
-            Show counts
+            Show Counts
           </label>
         </div>
         )}
