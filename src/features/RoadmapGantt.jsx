@@ -1,4 +1,4 @@
-import { Fragment, useMemo, useRef, useState } from "react";
+import { Fragment, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Card, Input, Select, MultiSelect, Button, IllustrationBadge } from "../components/ui/index.js";
 import { usePasswordGate } from "../lib/PasswordGate.jsx";
 import { MONTH_NAMES, STATUS_LABEL } from "../lib/text.js";
@@ -129,6 +129,24 @@ export default function RoadmapGantt({ initiatives, focusAreas, teams, onUpsert,
   const hscrollRef = useRef(null);
   const syncingRef = useRef(false);
   const dragIdRef = useRef(null); // id of the item currently being dragged, if any
+
+  // How tall .rg-hscroll's real, rendered horizontal scrollbar actually is
+  // (offsetHeight includes it, clientHeight doesn't) -- measured rather
+  // than guessed, so .rg-sidebar (which has no horizontal scrollbar of its
+  // own, see .rg-sidebar's `overflow-x: hidden`) can reserve the exact
+  // same amount of space via marginBottom and keep its clientHeight
+  // matched to .rg-hscroll's, whatever this OS/browser's scrollbar size
+  // actually is.
+  const [hScrollbarHeight, setHScrollbarHeight] = useState(0);
+  useLayoutEffect(() => {
+    const measure = () => {
+      const el = hscrollRef.current;
+      if (el) setHScrollbarHeight(el.offsetHeight - el.clientHeight);
+    };
+    measure();
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, []);
   const onHscrollScroll = (e) => {
     setScrollTop(e.currentTarget.scrollTop);
     if (syncingRef.current) return;
@@ -536,7 +554,7 @@ export default function RoadmapGantt({ initiatives, focusAreas, teams, onUpsert,
             className="rg-sidebar"
             ref={sidebarRef}
             onScroll={onSidebarScroll}
-            style={{ flex: `0 0 ${sidebarWidth}px` }}
+            style={{ flex: `0 0 ${sidebarWidth}px`, marginBottom: hScrollbarHeight }}
           >
             <div className="rg-sidebargrid" style={{ gridTemplateRows: rowsTemplate, gridTemplateColumns: sidebarColTemplate }}>
               <div className="rg-headcell rg-headcell--label" style={{ gridRow: 1, gridColumn: 1 }}>

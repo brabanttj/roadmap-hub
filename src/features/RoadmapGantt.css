@@ -106,33 +106,26 @@
 .rg-sidebar {
   /* flex-basis set inline (see `sidebarWidth` in RoadmapGantt.jsx) -- sized
      to fit exactly the visible columns, so it never actually overflows
-     horizontally. */
+     horizontally, and there's genuinely no horizontal scrollbar here
+     (`overflow-x: hidden` below) -- unlike a same-height `overflow-x:
+     scroll` track made merely *transparent*, this removes it in every
+     browser/engine, not just ones that support WebKit's `:horizontal`
+     scrollbar pseudo-class.
+     The lost space that scrollbar would have reserved is added back as
+     an explicit `marginBottom` (inline style, measured from .rg-hscroll's
+     real rendered scrollbar in RoadmapGantt.jsx) so this panel's
+     clientHeight still matches .rg-hscroll's exactly -- otherwise their
+     scroll RANGES would differ even though their content heights are
+     identical, and the two panels (kept in sync in JS) would drift apart
+     once scrolled far enough, clamping at different maximums. */
   flex: 0 0 auto;
-  /* `scroll` on BOTH axes -- not `overflow-y: auto; overflow-x: hidden` --
-     even though this panel never actually overflows horizontally. The
-     date panel (.rg-hscroll) always reserves a horizontal scrollbar via
-     `overflow: scroll` (see below); if this panel reserved none, its
-     clientHeight would end up a few pixels taller than the date panel's,
-     so their scroll RANGES would differ even though their content heights
-     are identical -- the two panels would drift out of alignment once
-     scrolled far enough, clamping at different maximums. Matching
-     `overflow: scroll` on both makes the reservation identical on both
-     panels, so the JS-synced scroll position (RoadmapGantt.jsx) always
-     lines the same row up in both. The horizontal one is never actually
-     usable though (there's nothing to scroll), so it's made fully
-     transparent below -- present for the height reservation, invisible
-     otherwise, rather than removing it outright and reopening the
-     scroll-drift bug. */
-  overflow: scroll;
+  overflow-y: scroll;
+  overflow-x: hidden;
   border-right: 1px solid var(--lt-color-border);
   scrollbar-color: var(--lt-gray-300) var(--lt-gray);
 }
 .rg-sidebar::-webkit-scrollbar-track {
   background: var(--lt-gray);
-}
-.rg-sidebar::-webkit-scrollbar-track:horizontal,
-.rg-sidebar::-webkit-scrollbar-thumb:horizontal {
-  background: transparent;
 }
 
 .rg-sidebargrid {
