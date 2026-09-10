@@ -18,7 +18,7 @@ function toFormState(initiative, focusAreas, teams) {
     currentState: initiative?.currentState || "",
     futureState: initiative?.futureState || "",
     successMetrics: initiative?.successMetrics || "",
-    impactedTeams: (initiative?.impactedTeams || []).join(", "),
+    impactedTeams: initiative?.impactedTeams || [],
     impactedProducts: initiative?.impactedProducts || [],
     status: initiative?.status && initiative.status !== "idea" && initiative.status !== "rejected"
       ? initiative.status
@@ -52,7 +52,7 @@ export default function InitiativeModal({ initiative, focusAreas, teams, onClose
     form.currentState.trim() &&
     form.futureState.trim() &&
     form.successMetrics.trim() &&
-    form.impactedTeams.trim() &&
+    form.impactedTeams.length > 0 &&
     form.impactedProducts.length > 0 &&
     (!scheduleRequired || (form.startMonth && form.endMonth));
 
@@ -71,10 +71,7 @@ export default function InitiativeModal({ initiative, focusAreas, teams, onClose
           currentState: form.currentState,
           futureState: form.futureState,
           successMetrics: form.successMetrics,
-          impactedTeams: form.impactedTeams
-            .split(",")
-            .map((t) => t.trim())
-            .filter(Boolean),
+          impactedTeams: form.impactedTeams,
           impactedProducts: form.impactedProducts,
           status: form.status,
           completed: form.status === "completed",
@@ -179,13 +176,15 @@ export default function InitiativeModal({ initiative, focusAreas, teams, onClose
             <span className="lt-field__label">Success metrics *</span>
             <textarea className="lt-input" rows={2} value={form.successMetrics} onChange={upd("successMetrics")} required />
           </label>
-          <Input
-            label="Impacted teams (comma-separated) *"
-            value={form.impactedTeams}
-            onChange={upd("impactedTeams")}
-            placeholder="e.g. Sales, Support"
-            required
-          />
+          <label className="lt-field">
+            <span className="lt-field__label">Impacted teams *</span>
+            <MultiSelect
+              label="Teams"
+              options={teams.map((t) => ({ value: t.name, label: t.name }))}
+              selected={form.impactedTeams}
+              onChange={(next) => setForm((f) => ({ ...f, impactedTeams: next }))}
+            />
+          </label>
           <label className="lt-field">
             <span className="lt-field__label">Impacted products *</span>
             <MultiSelect
