@@ -11,6 +11,16 @@
 
 .rg-toolbar__head {
   display: flex;
+  align-items: center;
+  margin-bottom: var(--lt-space-2);
+}
+/* Two independent accordions in the same Card -- Filters and Display are
+   deliberately separate sections (not merged into one grid), just using
+   the exact same toggle/panel pattern so they read as designed together. */
+.rg-toolbar__head--second {
+  margin-top: var(--lt-space-3);
+  padding-top: var(--lt-space-3);
+  border-top: 1px solid var(--lt-color-border);
 }
 .cf-toolbar.lt-card--pad {
   padding: var(--lt-space-3) var(--lt-space-5);
@@ -23,7 +33,6 @@
   border: none;
   background: none;
   padding: 0;
-  margin-bottom: var(--lt-space-2);
   font-family: var(--lt-font-body);
   font-size: var(--lt-fs-sm);
   font-weight: var(--lt-fw-bold);
@@ -51,11 +60,6 @@
 }
 /* Two collapsible sections share this Card (Filters, then Settings) --
    give the second header some separation from whatever's above it. */
-.rg-toolbar__grid + .rg-toolbar__head {
-  margin-top: var(--lt-space-3);
-  padding-top: var(--lt-space-3);
-  border-top: 1px solid var(--lt-color-border);
-}
 .rg-settings__checkbox {
   display: flex;
   align-items: center;

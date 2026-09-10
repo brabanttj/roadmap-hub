@@ -1,5 +1,5 @@
 import { Fragment, useMemo, useRef, useState } from "react";
-import { Card, Input, MultiSelect, Button, IllustrationBadge } from "../components/ui/index.js";
+import { Card, Input, Select, MultiSelect, Button, IllustrationBadge } from "../components/ui/index.js";
 import { usePasswordGate } from "../lib/PasswordGate.jsx";
 import { MONTH_NAMES, STATUS_LABEL } from "../lib/text.js";
 import { useInitiativeTooltip } from "./InitiativeDetails.jsx";
@@ -107,18 +107,7 @@ function occupiedIndices(item, activeColumns) {
   return out;
 }
 
-export default function RoadmapGantt({
-  initiatives,
-  focusAreas,
-  teams,
-  onUpsert,
-  onRemove,
-  onReorder,
-  groupBy,
-  sortMode,
-  extraColumns,
-  showCounts,
-}) {
+export default function RoadmapGantt({ initiatives, focusAreas, teams, onUpsert, onRemove, onReorder }) {
   const guard = usePasswordGate();
   const [search, setSearch] = useState("");
   const [focusAreaFilter, setFocusAreaFilter] = useState([]); // [] = all
@@ -126,6 +115,14 @@ export default function RoadmapGantt({
   const [statusFilter, setStatusFilter] = useState([]); // [] = all
   const [columnFilter, setColumnFilter] = useState([]); // [] = current year's months + backlog
   const [filtersOpen, setFiltersOpen] = useState(true);
+  const [displayOpen, setDisplayOpen] = useState(false);
+  // Roadmap display: how the table itself groups/sorts/shows columns --
+  // lives right in the Filters row below (same controls, same components),
+  // since it only ever affects this one view.
+  const [groupBy, setGroupBy] = useState("team"); // "team" | "focusArea"
+  const [sortMode, setSortMode] = useState("priority"); // "priority" | "startDate"
+  const [extraColumns, setExtraColumns] = useState([]); // [] = none of the optional columns
+  const [showCounts, setShowCounts] = useState(true);
   const [editing, setEditing] = useState(null); // { initiative } | { isNew: true } | null
   const { show: showTooltip, hide: hideTooltip, portal: tooltipPortal } = useInitiativeTooltip();
   const [scrollTop, setScrollTop] = useState(0); // drives which group's sticky band is shown
@@ -415,6 +412,48 @@ export default function RoadmapGantt({
           <Button variant="accent" onClick={guard(() => setEditing({ isNew: true }))}>
             + Add initiative
           </Button>
+        </div>
+        )}
+
+        <div className="rg-toolbar__head rg-toolbar__head--second">
+          <button
+            type="button"
+            className="rg-toolbar__toggle"
+            onClick={() => setDisplayOpen((v) => !v)}
+            aria-expanded={displayOpen}
+          >
+            <span aria-hidden="true">{displayOpen ? "▾" : "▸"}</span>
+            Display
+          </button>
+        </div>
+        {displayOpen && (
+        <div className="rg-toolbar__grid">
+          <Select value={groupBy} onChange={(e) => setGroupBy(e.target.value)} aria-label="Group by">
+            <option value="team">Group by Team</option>
+            <option value="focusArea">Group by Focus Area</option>
+          </Select>
+          <Select
+            value={sortModeEffective}
+            onChange={(e) => setSortMode(e.target.value)}
+            disabled={groupBy === "focusArea"}
+            aria-label="Sort by"
+          >
+            <option value="priority" disabled={groupBy === "focusArea"}>
+              Sort by Priority
+            </option>
+            <option value="startDate">Sort by Start Date</option>
+          </Select>
+          <MultiSelect
+            label="columns"
+            buttonLabel="Show columns"
+            options={EXTRA_COLUMN_OPTIONS}
+            selected={extraColumns}
+            onChange={setExtraColumns}
+          />
+          <label className="rg-settings__checkbox">
+            <input type="checkbox" checked={showCounts} onChange={(e) => setShowCounts(e.target.checked)} />
+            Show counts
+          </label>
         </div>
         )}
       </Card>

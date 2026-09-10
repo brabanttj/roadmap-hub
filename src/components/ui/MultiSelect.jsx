@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
  * string[]; empty means "everything" (no filter applied), matching how the
  * single-select <Select>'s "All ..." option used to behave.
  */
-export default function MultiSelect({ label, options, selected, onChange, className = "" }) {
+export default function MultiSelect({ label, options, selected, onChange, className = "", buttonLabel }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
 
@@ -26,12 +26,17 @@ export default function MultiSelect({ label, options, selected, onChange, classN
   const toggle = (value) =>
     onChange(selected.includes(value) ? selected.filter((v) => v !== value) : [...selected, value]);
 
+  // `buttonLabel`, if given, pins the trigger to that exact static text
+  // regardless of selection count -- for a data-entry-style control (e.g.
+  // "Show columns") where the summary-count pattern below reads oddly,
+  // unlike a filter where "3 Teams" is useful at a glance.
   const summary =
-    selected.length === 0 || selected.length === options.length
+    buttonLabel ??
+    (selected.length === 0 || selected.length === options.length
       ? `All ${label}`
       : selected.length === 1
       ? options.find((o) => o.value === selected[0])?.label ?? label
-      : `${selected.length} ${label}`;
+      : `${selected.length} ${label}`);
 
   return (
     <div className={`lt-multiselect ${className}`} ref={ref}>

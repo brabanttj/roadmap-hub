@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { Card, Icon, Select, MultiSelect } from "../components/ui/index.js";
-import RoadmapGantt, { EXTRA_COLUMN_OPTIONS } from "./RoadmapGantt.jsx";
+import { Card, Icon } from "../components/ui/index.js";
+import RoadmapGantt from "./RoadmapGantt.jsx";
 import IdeaForm from "./IdeaForm.jsx";
 import ReviewQueue from "./ReviewQueue.jsx";
 import RejectedArchive from "./RejectedArchive.jsx";
@@ -34,21 +34,13 @@ export default function RoadmapPlanner() {
   const [initiatives, setInitiatives] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [section, setSection] = useState("initiatives"); // initiatives | settings
-  const [view, setView] = useState("roadmap"); // roadmap | submit | review | rejected | archived
+  // One flat set of destinations -- roadmap content on the left, Export
+  // and Settings as plain trailing items on the right (same tab component,
+  // just visually set apart by a divider), rather than a separate level of
+  // navigation above this.
+  const [view, setView] = useState("roadmap"); // roadmap | submit | review | rejected | archived | taxonomy
   const [exporting, setExporting] = useState(false);
   const [quoteIndex, setQuoteIndex] = useState(0);
-
-  // Roadmap display settings -- how the Gantt groups/sorts/columns itself.
-  // Owned here (not inside RoadmapGantt) since they now live under the
-  // Settings section rather than the Roadmap view itself.
-  const [groupBy, setGroupBy] = useState("team"); // "team" | "focusArea"
-  const [sortMode, setSortMode] = useState("priority"); // "priority" | "startDate"
-  const [extraColumns, setExtraColumns] = useState([]); // [] = none of the optional columns
-  const [showCounts, setShowCounts] = useState(true);
-  // Priority is a per-team drag order -- meaningless once grouped by Focus
-  // Area, so that grouping always sorts by start date instead.
-  const sortModeEffective = groupBy === "focusArea" ? "startDate" : sortMode;
 
   useEffect(() => {
     const id = setInterval(() => {
@@ -139,81 +131,68 @@ export default function RoadmapPlanner() {
         </div>
       )}
 
-      <div className="rp-sections" role="tablist">
+      <div className="cf-tabs" role="tablist">
         <button
           type="button"
           role="tab"
-          aria-selected={section === "initiatives"}
-          className={`rp-section${section === "initiatives" ? " rp-section--on" : ""}`}
-          onClick={() => setSection("initiatives")}
+          aria-selected={view === "roadmap"}
+          className={`cf-tab${view === "roadmap" ? " cf-tab--on" : ""}`}
+          onClick={() => setView("roadmap")}
         >
-          Initiatives
+          Roadmap
         </button>
         <button
           type="button"
           role="tab"
-          aria-selected={section === "settings"}
-          className={`rp-section${section === "settings" ? " rp-section--on" : ""}`}
-          onClick={() => setSection("settings")}
+          aria-selected={view === "submit"}
+          className={`cf-tab${view === "submit" ? " cf-tab--on" : ""}`}
+          onClick={() => setView("submit")}
+        >
+          Submit an idea
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={view === "review"}
+          className={`cf-tab${view === "review" ? " cf-tab--on" : ""}`}
+          onClick={() => setView("review")}
+        >
+          Review queue <span className="cf-tab__n">{ideaCount}</span>
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={view === "rejected"}
+          className={`cf-tab${view === "rejected" ? " cf-tab--on" : ""}`}
+          onClick={() => setView("rejected")}
+        >
+          Rejected <span className="cf-tab__n">{rejectedCount}</span>
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={view === "archived"}
+          className={`cf-tab${view === "archived" ? " cf-tab--on" : ""}`}
+          onClick={() => setView("archived")}
+        >
+          Archived <span className="cf-tab__n">{archivedCount}</span>
+        </button>
+        <span className="cf-tabs__divider" aria-hidden="true" />
+        <button type="button" className="cf-tab" onClick={() => setExporting(true)}>
+          Export to Excel
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={view === "taxonomy"}
+          className={`cf-tab${view === "taxonomy" ? " cf-tab--on" : ""}`}
+          onClick={() => setView("taxonomy")}
         >
           Settings
         </button>
       </div>
 
-      {section === "initiatives" && (
-        <div className="cf-tabs" role="tablist">
-          <button
-            type="button"
-            role="tab"
-            aria-selected={view === "roadmap"}
-            className={`cf-tab${view === "roadmap" ? " cf-tab--on" : ""}`}
-            onClick={() => setView("roadmap")}
-          >
-            Roadmap
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={view === "submit"}
-            className={`cf-tab${view === "submit" ? " cf-tab--on" : ""}`}
-            onClick={() => setView("submit")}
-          >
-            Submit an idea
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={view === "review"}
-            className={`cf-tab${view === "review" ? " cf-tab--on" : ""}`}
-            onClick={() => setView("review")}
-          >
-            Review queue <span className="cf-tab__n">{ideaCount}</span>
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={view === "rejected"}
-            className={`cf-tab${view === "rejected" ? " cf-tab--on" : ""}`}
-            onClick={() => setView("rejected")}
-          >
-            Rejected <span className="cf-tab__n">{rejectedCount}</span>
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={view === "archived"}
-            className={`cf-tab${view === "archived" ? " cf-tab--on" : ""}`}
-            onClick={() => setView("archived")}
-          >
-            Archived <span className="cf-tab__n">{archivedCount}</span>
-          </button>
-          <button type="button" className="cf-tab" onClick={() => setExporting(true)}>
-            Export to Excel
-          </button>
-        </div>
-      )}
-
-      {section === "initiatives" && view === "roadmap" && (
+      {view === "roadmap" && (
         <RoadmapGantt
           initiatives={initiatives}
           focusAreas={focusAreas}
@@ -221,16 +200,10 @@ export default function RoadmapPlanner() {
           onUpsert={upsertInitiative}
           onRemove={removeInitiative}
           onReorder={reorderInitiatives}
-          groupBy={groupBy}
-          sortMode={sortMode}
-          extraColumns={extraColumns}
-          showCounts={showCounts}
         />
       )}
-      {section === "initiatives" && view === "submit" && (
-        <IdeaForm focusAreas={focusAreas} onSubmitted={upsertInitiative} />
-      )}
-      {section === "initiatives" && view === "review" && (
+      {view === "submit" && <IdeaForm focusAreas={focusAreas} onSubmitted={upsertInitiative} />}
+      {view === "review" && (
         <ReviewQueue
           initiatives={initiatives.filter((i) => i.status === "idea" && !i.archived)}
           teams={teams}
@@ -238,58 +211,25 @@ export default function RoadmapPlanner() {
           onArchive={archiveInitiative}
         />
       )}
-      {section === "initiatives" && view === "rejected" && (
+      {view === "rejected" && (
         <RejectedArchive
           initiatives={initiatives.filter((i) => i.status === "rejected" && !i.archived)}
           onArchive={archiveInitiative}
         />
       )}
-      {section === "initiatives" && view === "archived" && (
+      {view === "archived" && (
         <ArchivedArchive
           initiatives={initiatives.filter((i) => i.archived)}
           onUnarchive={(id) => archiveInitiative(id, false)}
         />
       )}
-
-      {section === "settings" && (
-        <>
-          <Card className="cf-toolbar rp-settings">
-            <h3 className="rp-settings__title">Roadmap display</h3>
-            <div className="rg-toolbar__grid">
-              <Select value={groupBy} onChange={(e) => setGroupBy(e.target.value)} aria-label="Group by">
-                <option value="team">Group by Team</option>
-                <option value="focusArea">Group by Focus Area</option>
-              </Select>
-              <Select
-                value={sortModeEffective}
-                onChange={(e) => setSortMode(e.target.value)}
-                disabled={groupBy === "focusArea"}
-                aria-label="Sort by"
-              >
-                <option value="priority" disabled={groupBy === "focusArea"}>
-                  Sort by Priority
-                </option>
-                <option value="startDate">Sort by Start Date</option>
-              </Select>
-              <MultiSelect
-                label="Columns"
-                options={EXTRA_COLUMN_OPTIONS}
-                selected={extraColumns}
-                onChange={setExtraColumns}
-              />
-              <label className="rg-settings__checkbox">
-                <input type="checkbox" checked={showCounts} onChange={(e) => setShowCounts(e.target.checked)} />
-                Show initiative counts
-              </label>
-            </div>
-          </Card>
-          <ManageTaxonomy
-            focusAreas={focusAreas}
-            teams={teams}
-            setFocusAreas={setFocusAreas}
-            setTeams={setTeams}
-          />
-        </>
+      {view === "taxonomy" && (
+        <ManageTaxonomy
+          focusAreas={focusAreas}
+          teams={teams}
+          setFocusAreas={setFocusAreas}
+          setTeams={setTeams}
+        />
       )}
 
       {exporting && <ExportModal initiatives={initiatives} onClose={() => setExporting(false)} />}
