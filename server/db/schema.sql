@@ -98,3 +98,20 @@ CREATE TABLE IF NOT EXISTS initiative_notes (
   updated_at     TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS initiative_notes_initiative_idx ON initiative_notes (initiative_id);
+
+-- ---------------------------------------------------------------------------
+-- Q&A / discussion thread on an initiative -- separate from Notes (which is
+-- context someone jots down about the work itself). This is a simple,
+-- append-only chat log: anyone with access to edit the initiative can post
+-- a question or reply, and it's kept forever as the initiative's history.
+-- No "edit" -- once sent, a chat message stays as posted (delete only, for
+-- outright mistakes/spam).
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS initiative_chat_messages (
+  id             SERIAL PRIMARY KEY,
+  initiative_id  INT NOT NULL REFERENCES initiatives (id) ON DELETE CASCADE,
+  body           TEXT NOT NULL,
+  author         TEXT NOT NULL DEFAULT '',
+  created_at     TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS initiative_chat_messages_initiative_idx ON initiative_chat_messages (initiative_id);

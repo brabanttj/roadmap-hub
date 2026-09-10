@@ -343,13 +343,21 @@
    dragged item is currently over, showing exactly where it'll land. */
 .rg-labelcell__handle {
   flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
   color: var(--lt-gray-300);
   cursor: grab;
   line-height: 1;
-  padding: var(--lt-space-1);
 }
 .rg-labelcell__handle:active {
   cursor: grabbing;
+}
+/* Hidden but still occupies its slot, so the info icon + title stay
+   aligned across rows whether or not this particular one is draggable. */
+.rg-labelcell__handle--hidden {
+  cursor: default;
 }
 .rg-labelcell--dragover {
   box-shadow: inset 0 2px 0 0 var(--lt-blue);

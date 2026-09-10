@@ -737,18 +737,16 @@ function SidebarRow({
         onDragLeave={canDrag ? onDragLeave : undefined}
         onDrop={canDrag ? onDrop : undefined}
       >
-        {canDrag && (
-          <span
-            className="rg-labelcell__handle"
-            aria-hidden="true"
-            title="Drag to reprioritize"
-            draggable
-            onDragStart={onDragStart}
-            onDragEnd={onDragEnd}
-          >
-            ⠿
-          </span>
-        )}
+        <span
+          className={`rg-labelcell__handle${canDrag ? "" : " rg-labelcell__handle--hidden"}`}
+          aria-hidden="true"
+          title={canDrag ? "Drag to reprioritize" : undefined}
+          draggable={canDrag}
+          onDragStart={canDrag ? onDragStart : undefined}
+          onDragEnd={canDrag ? onDragEnd : undefined}
+        >
+          {canDrag ? "⠿" : ""}
+        </span>
         <button
           type="button"
           className="rg-labelcell__info"

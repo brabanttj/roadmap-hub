@@ -27,7 +27,14 @@ const INITIATIVE_COLUMNS = `
       'updatedAt', to_char(n.updated_at, 'YYYY-MM-DD"T"HH24:MI:SS"Z"')
     ) ORDER BY n.created_at), '[]'::json)
     FROM initiative_notes n WHERE n.initiative_id = initiatives.id
-  ) AS notes
+  ) AS notes,
+  (
+    SELECT COALESCE(json_agg(json_build_object(
+      'id', c.id, 'body', c.body, 'author', c.author,
+      'createdAt', to_char(c.created_at, 'YYYY-MM-DD"T"HH24:MI:SS"Z"')
+    ) ORDER BY c.created_at), '[]'::json)
+    FROM initiative_chat_messages c WHERE c.initiative_id = initiatives.id
+  ) AS chat
 `;
 
 // Month granularity, no week detail. A year/month pair is either both
@@ -362,6 +369,50 @@ router.delete("/initiatives/:id/notes/:noteId", async (req, res) => {
       id,
     ]);
     if (!rowCount) return res.status(404).json({ ok: false, error: "Note not found" });
+    const { rows } = await pool.query(`SELECT ${INITIATIVE_COLUMNS} FROM initiatives WHERE id = $1`, [id]);
+    res.json({ ok: true, initiative: rows[0] });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ ok: false, error: String(e.message || e) });
+  }
+});
+
+// ---- Chat: append-only Q&A / discussion thread on an initiative ------------
+// Post-only, no edit -- delete is only for outright mistakes/spam. Each
+// returns the whole initiative (with its updated `chat` array), same as Notes.
+router.post("/initiatives/:id/chat", async (req, res) => {
+  const id = Number(req.params.id);
+  const body = String(req.body?.body || "").trim();
+  const author = String(req.body?.author || "").trim();
+  if (!Number.isInteger(id)) return res.status(400).json({ ok: false, error: "Invalid id" });
+  if (!body) return res.status(400).json({ ok: false, error: "Message text is required" });
+  try {
+    await pool.query(`INSERT INTO initiative_chat_messages (initiative_id, body, author) VALUES ($1, $2, $3)`, [
+      id,
+      body,
+      author,
+    ]);
+    const { rows } = await pool.query(`SELECT ${INITIATIVE_COLUMNS} FROM initiatives WHERE id = $1`, [id]);
+    if (!rows.length) return res.status(404).json({ ok: false, error: "Initiative not found" });
+    res.json({ ok: true, initiative: rows[0] });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ ok: false, error: String(e.message || e) });
+  }
+});
+
+router.delete("/initiatives/:id/chat/:messageId", async (req, res) => {
+  const id = Number(req.params.id);
+  const messageId = Number(req.params.messageId);
+  if (!Number.isInteger(id) || !Number.isInteger(messageId)) {
+    return res.status(400).json({ ok: false, error: "Invalid id" });
+  }
+  try {
+    const { rowCount } = await pool.query(
+      `DELETE FROM initiative_chat_messages WHERE id = $1 AND initiative_id = $2`,
+      [messageId, id]
+    );
+    if (!rowCount) return res.status(404).json({ ok: false, error: "Message not found" });
     const { rows } = await pool.query(`SELECT ${INITIATIVE_COLUMNS} FROM initiatives WHERE id = $1`, [id]);
     res.json({ ok: true, initiative: rows[0] });
   } catch (e) {
