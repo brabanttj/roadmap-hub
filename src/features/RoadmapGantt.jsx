@@ -4,6 +4,7 @@ import { usePasswordGate } from "../lib/PasswordGate.jsx";
 import { MONTH_NAMES, STATUS_LABEL } from "../lib/text.js";
 import { useInitiativeTooltip } from "./InitiativeDetails.jsx";
 import InitiativeModal from "./InitiativeModal.jsx";
+import ExportModal from "./ExportModal.jsx";
 import "./RoadmapGantt.css";
 
 // Excluded from the Gantt entirely -- ideas haven't been reviewed yet, and
@@ -90,6 +91,7 @@ export default function RoadmapGantt({ initiatives, focusAreas, teams, onUpsert,
   const [sortMode, setSortMode] = useState("priority"); // "priority" | "startDate" -- see `rows` below
   const [filtersOpen, setFiltersOpen] = useState(true);
   const [editing, setEditing] = useState(null); // { initiative } | { isNew: true } | null
+  const [exporting, setExporting] = useState(false);
   const { show: showTooltip, hide: hideTooltip, portal: tooltipPortal } = useInitiativeTooltip();
   const [scrollTop, setScrollTop] = useState(0); // drives which group's sticky band is shown
   const [dragOverId, setDragOverId] = useState(null); // item id currently being dragged over -- drop-target highlight
@@ -387,6 +389,9 @@ export default function RoadmapGantt({ initiatives, focusAreas, teams, onUpsert,
             </option>
             <option value="startDate">Sort by Start Date</option>
           </Select>
+          <Button variant="secondary" onClick={() => setExporting(true)}>
+            Export to Excel
+          </Button>
           <Button variant="accent" onClick={guard(() => setEditing({ isNew: true }))}>
             + Add initiative
           </Button>
@@ -509,6 +514,8 @@ export default function RoadmapGantt({ initiatives, focusAreas, teams, onUpsert,
           onArchive={archive}
         />
       )}
+
+      {exporting && <ExportModal initiatives={initiatives} onClose={() => setExporting(false)} />}
 
       {tooltipPortal}
     </>
