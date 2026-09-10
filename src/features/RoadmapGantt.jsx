@@ -127,6 +127,7 @@ export default function RoadmapGantt({ initiatives, focusAreas, teams, onUpsert,
   const { show: showTooltip, hide: hideTooltip, portal: tooltipPortal } = useInitiativeTooltip();
   const [scrollTop, setScrollTop] = useState(0); // drives which group's sticky band is shown
   const [dragOverId, setDragOverId] = useState(null); // item id currently being dragged over -- drop-target highlight
+  const [sidebarWidthOverride, setSidebarWidthOverride] = useState(null); // null = fit exactly the visible columns
 
   const sidebarRef = useRef(null);
   const hscrollRef = useRef(null);
@@ -182,6 +183,25 @@ export default function RoadmapGantt({ initiatives, focusAreas, teams, onUpsert,
       e.stopPropagation();
       panRef.current.moved = false;
     }
+  };
+
+  // Drag the divider between the Initiative/Focus Area sidebar and the
+  // date grid to trade width between them -- shrink the sidebar to fit
+  // more months on screen at once, or widen it to read long column values
+  // (Summary, Notes, ...) without truncation.
+  const onSidebarResizeMouseDown = (e) => {
+    e.preventDefault();
+    const startX = e.clientX;
+    const startWidth = sidebarWidth;
+    const onMove = (ev) => {
+      setSidebarWidthOverride(Math.max(220, Math.min(1000, startWidth + (ev.clientX - startX))));
+    };
+    const onUp = () => {
+      document.removeEventListener("mousemove", onMove);
+      document.removeEventListener("mouseup", onUp);
+    };
+    document.addEventListener("mousemove", onMove);
+    document.addEventListener("mouseup", onUp);
   };
 
   const teamOrder = teams.map((t) => t.name);
@@ -391,6 +411,13 @@ export default function RoadmapGantt({ initiatives, focusAreas, teams, onUpsert,
   const sidebarColTemplate = `220px 150px ${extraColumns
     .map((k) => `${EXTRA_COLUMN_OPTIONS.find((o) => o.value === k).width}px`)
     .join(" ")}`.trim();
+  // Natural width needed to fit every visible sidebar column -- the panel
+  // defaults to exactly this (so nothing clips when extra columns are
+  // turned on) but the user can drag it narrower/wider from there (see
+  // the resize handle + sidebarWidth below).
+  const sidebarNaturalWidth =
+    220 + 150 + extraColumns.reduce((sum, k) => sum + EXTRA_COLUMN_OPTIONS.find((o) => o.value === k).width, 0);
+  const sidebarWidth = Math.max(220, sidebarWidthOverride ?? sidebarNaturalWidth);
 
   // Which group band should be floating, pinned just under the column
   // headers -- the last group whose own row has scrolled up underneath
@@ -528,7 +555,12 @@ export default function RoadmapGantt({ initiatives, focusAreas, teams, onUpsert,
               Overflow spec's visible/non-visible axis-pairing rule, which
               breaks its header's vertical stickiness. Two independently
               vertically-scrolling panels, kept in sync, avoids that.) */}
-          <div className="rg-sidebar" ref={sidebarRef} onScroll={onSidebarScroll}>
+          <div
+            className="rg-sidebar"
+            ref={sidebarRef}
+            onScroll={onSidebarScroll}
+            style={{ flex: `0 0 ${sidebarWidth}px` }}
+          >
             <div className="rg-sidebargrid" style={{ gridTemplateRows: rowsTemplate, gridTemplateColumns: sidebarColTemplate }}>
               <div className="rg-headcell rg-headcell--label" style={{ gridRow: 1, gridColumn: 1 }}>
                 <span>Initiative</span>
@@ -572,6 +604,15 @@ export default function RoadmapGantt({ initiatives, focusAreas, teams, onUpsert,
               )}
             </div>
           </div>
+
+          <div
+            className="rg-resizehandle"
+            role="separator"
+            aria-orientation="vertical"
+            aria-label="Resize the initiative columns"
+            title="Drag to resize"
+            onMouseDown={onSidebarResizeMouseDown}
+          />
 
           <div
             className="rg-hscroll lt-scroll"
