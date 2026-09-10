@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
  * string[]; empty means "everything" (no filter applied), matching how the
  * single-select <Select>'s "All ..." option used to behave.
  */
-export default function MultiSelect({ label, options, selected, onChange, className = "", buttonLabel }) {
+export default function MultiSelect({ label, options, selected, onChange, className = "" }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
 
@@ -23,20 +23,22 @@ export default function MultiSelect({ label, options, selected, onChange, classN
     };
   }, [open]);
 
-  const toggle = (value) =>
+  // A `locked` option is always selected and can't be toggled off -- used
+  // for choices that are mandatory but should still count toward the
+  // summary text (e.g. "Initiative" in the Gantt's column picker: it's
+  // always shown, but still counts as one of the "N Columns").
+  const toggle = (value, locked) => {
+    if (locked) return;
     onChange(selected.includes(value) ? selected.filter((v) => v !== value) : [...selected, value]);
+  };
+  const lockedValues = options.filter((o) => o.locked).map((o) => o.value);
 
-  // `buttonLabel`, if given, pins the trigger to that exact static text
-  // regardless of selection count -- for a data-entry-style control (e.g.
-  // "Show columns") where the summary-count pattern below reads oddly,
-  // unlike a filter where "3 Teams" is useful at a glance.
   const summary =
-    buttonLabel ??
-    (selected.length === 0 || selected.length === options.length
+    selected.length === 0 || selected.length === options.length
       ? `All ${label}`
       : selected.length === 1
       ? options.find((o) => o.value === selected[0])?.label ?? label
-      : `${selected.length} ${label}`);
+      : `${selected.length} ${label}`;
 
   return (
     <div className={`lt-multiselect ${className}`} ref={ref}>
@@ -53,7 +55,7 @@ export default function MultiSelect({ label, options, selected, onChange, classN
       {open && (
         <div className="lt-multiselect__panel" role="listbox">
           <div className="lt-multiselect__actions">
-            <button type="button" onClick={() => onChange([])}>
+            <button type="button" onClick={() => onChange(lockedValues)}>
               All
             </button>
             <button type="button" onClick={() => onChange(options.map((o) => o.value))}>
@@ -61,14 +63,19 @@ export default function MultiSelect({ label, options, selected, onChange, classN
             </button>
           </div>
           {options.map((o) => (
-            <label key={o.value} className="lt-multiselect__option">
+            <label
+              key={o.value}
+              className={`lt-multiselect__option${o.locked ? " lt-multiselect__option--locked" : ""}`}
+            >
               <input
                 type="checkbox"
                 checked={selected.includes(o.value)}
-                onChange={() => toggle(o.value)}
+                disabled={o.locked}
+                onChange={() => toggle(o.value, o.locked)}
               />
               {o.swatch && <span className="lt-multiselect__swatch" style={{ background: o.swatch }} />}
               {o.label}
+              {o.locked && <span className="lt-multiselect__lockhint">Always shown</span>}
             </label>
           ))}
         </div>

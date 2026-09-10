@@ -1,7 +1,10 @@
+/* Fills the viewport instead of capping out at a fixed max-width -- the
+   Gantt in particular benefits from every extra pixel of horizontal room
+   on a wide monitor. Margins come entirely from padding, not from an
+   auto-centered max-width column. */
 .rp-shell {
   position: relative;
-  max-width: 1800px;
-  margin: 0 auto;
+  width: 100%;
   padding: var(--lt-space-6) var(--lt-space-6) var(--lt-space-2);
 }
 

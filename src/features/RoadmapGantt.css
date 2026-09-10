@@ -9,10 +9,24 @@
   --rg-status-completed: var(--lt-deep-blue);
 }
 
+/* The whole header bar is the clickable toggle target now (not just the
+   small chevron+label inside it) -- a full-width, left-aligned button
+   reset back to plain-text styling, with :hover/:focus feedback so it's
+   still obvious it's clickable everywhere across its width. */
 .rg-toolbar__head {
-  display: flex;
-  align-items: center;
-  margin-bottom: var(--lt-space-2);
+  display: block;
+  width: 100%;
+  margin: 0 0 var(--lt-space-2);
+  padding: var(--lt-space-1) 0;
+  border: none;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+  border-radius: var(--lt-radius-sm);
+}
+.rg-toolbar__head:hover,
+.rg-toolbar__head:focus-visible {
+  background: var(--lt-gray);
 }
 /* Two independent accordions in the same Card -- Filters and Display are
    deliberately separate sections (not merged into one grid), just using
@@ -30,16 +44,13 @@
   display: flex;
   align-items: center;
   gap: var(--lt-space-2);
-  border: none;
-  background: none;
-  padding: 0;
   font-family: var(--lt-font-body);
   font-size: var(--lt-fs-sm);
   font-weight: var(--lt-fw-bold);
   color: var(--lt-text-secondary);
-  cursor: pointer;
 }
-.rg-toolbar__toggle:hover {
+.rg-toolbar__head:hover .rg-toolbar__toggle,
+.rg-toolbar__head:focus-visible .rg-toolbar__toggle {
   color: var(--lt-blue);
 }
 

@@ -328,6 +328,18 @@ a.lt-badge:hover {
   border-radius: 50%;
   flex: 0 0 auto;
 }
+.lt-multiselect__option--locked {
+  cursor: default;
+  color: var(--lt-text-muted);
+}
+.lt-multiselect__option--locked:hover {
+  background: none;
+}
+.lt-multiselect__lockhint {
+  margin-left: auto;
+  font-size: 10px;
+  color: var(--lt-gray-300);
+}
 
 /* ---- Modal --------------------------------------------------------------- */
 .lt-modal__overlay {

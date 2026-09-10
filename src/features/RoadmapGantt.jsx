@@ -114,7 +114,7 @@ export default function RoadmapGantt({ initiatives, focusAreas, teams, onUpsert,
   const [teamFilter, setTeamFilter] = useState([]); // [] = all
   const [statusFilter, setStatusFilter] = useState([]); // [] = all
   const [columnFilter, setColumnFilter] = useState([]); // [] = current year's months + backlog
-  const [filtersOpen, setFiltersOpen] = useState(true);
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [displayOpen, setDisplayOpen] = useState(false);
   // Roadmap display: how the table itself groups/sorts/shows columns --
   // lives right in the Filters row below (same controls, same components),
@@ -163,6 +163,16 @@ export default function RoadmapGantt({ initiatives, focusAreas, teams, onUpsert,
   const primaryOrder = groupBy === "team" ? teamOrder : focusAreaOrder;
   const primaryFallback = groupBy === "team" ? "(No team)" : "(No focus area)";
   const secondaryLabel = groupBy === "team" ? "Focus Area" : "Team";
+
+  // The Columns picker lists every column, not just the optional ones --
+  // Initiative and the secondary column are always shown and can't be
+  // turned off, but still count toward "N Columns" in the summary (see
+  // MultiSelect's `locked` option support).
+  const columnPickerOptions = [
+    { value: "initiative", label: "Initiative", locked: true },
+    { value: "secondary", label: secondaryLabel, locked: true },
+    ...EXTRA_COLUMN_OPTIONS,
+  ];
 
   // Priority is a per-team drag order -- it doesn't mean anything once
   // grouped by Focus Area (a focus area isn't a single owner who could
@@ -365,17 +375,17 @@ export default function RoadmapGantt({ initiatives, focusAreas, teams, onUpsert,
   return (
     <>
       <Card className="cf-toolbar">
-        <div className="rg-toolbar__head">
-          <button
-            type="button"
-            className="rg-toolbar__toggle"
-            onClick={() => setFiltersOpen((v) => !v)}
-            aria-expanded={filtersOpen}
-          >
+        <button
+          type="button"
+          className="rg-toolbar__head"
+          onClick={() => setFiltersOpen((v) => !v)}
+          aria-expanded={filtersOpen}
+        >
+          <span className="rg-toolbar__toggle">
             <span aria-hidden="true">{filtersOpen ? "▾" : "▸"}</span>
             Filters
-          </button>
-        </div>
+          </span>
+        </button>
         {filtersOpen && (
         <div className="rg-toolbar__grid">
           <Input
@@ -415,17 +425,17 @@ export default function RoadmapGantt({ initiatives, focusAreas, teams, onUpsert,
         </div>
         )}
 
-        <div className="rg-toolbar__head rg-toolbar__head--second">
-          <button
-            type="button"
-            className="rg-toolbar__toggle"
-            onClick={() => setDisplayOpen((v) => !v)}
-            aria-expanded={displayOpen}
-          >
+        <button
+          type="button"
+          className="rg-toolbar__head rg-toolbar__head--second"
+          onClick={() => setDisplayOpen((v) => !v)}
+          aria-expanded={displayOpen}
+        >
+          <span className="rg-toolbar__toggle">
             <span aria-hidden="true">{displayOpen ? "▾" : "▸"}</span>
             Display
-          </button>
-        </div>
+          </span>
+        </button>
         {displayOpen && (
         <div className="rg-toolbar__grid">
           <Select value={groupBy} onChange={(e) => setGroupBy(e.target.value)} aria-label="Group by">
@@ -444,11 +454,10 @@ export default function RoadmapGantt({ initiatives, focusAreas, teams, onUpsert,
             <option value="startDate">Sort by Start Date</option>
           </Select>
           <MultiSelect
-            label="columns"
-            buttonLabel="Show Columns"
-            options={EXTRA_COLUMN_OPTIONS}
-            selected={extraColumns}
-            onChange={setExtraColumns}
+            label="Columns"
+            options={columnPickerOptions}
+            selected={["initiative", "secondary", ...extraColumns]}
+            onChange={(next) => setExtraColumns(next.filter((v) => v !== "initiative" && v !== "secondary"))}
           />
           <label className="rg-settings__checkbox">
             <input type="checkbox" checked={showCounts} onChange={(e) => setShowCounts(e.target.checked)} />
