@@ -149,6 +149,41 @@ export default function RoadmapGantt({ initiatives, focusAreas, teams, onUpsert,
     hideTooltip();
   };
 
+  // Click-and-drag panning: grab anywhere on the date grid (not just the
+  // scrollbar) and drag left/right to reveal earlier/later months. Only
+  // the horizontal position is dragged -- vertical scroll keeps working
+  // normally via wheel/scrollbar. A real drag (moved past a few px)
+  // suppresses the click that would otherwise follow on mouseup, so
+  // panning across a bar doesn't also pop the edit modal open.
+  const panRef = useRef({ down: false, startX: 0, startScrollLeft: 0, moved: false });
+  const onHscrollMouseDown = (e) => {
+    if (e.button !== 0) return;
+    const el = hscrollRef.current;
+    if (!el) return;
+    panRef.current = { down: true, startX: e.clientX, startScrollLeft: el.scrollLeft, moved: false };
+    const onMove = (ev) => {
+      if (!panRef.current.down) return;
+      const dx = ev.clientX - panRef.current.startX;
+      if (Math.abs(dx) > 4) panRef.current.moved = true;
+      el.scrollLeft = panRef.current.startScrollLeft - dx;
+      hideTooltip();
+    };
+    const onUp = () => {
+      panRef.current.down = false;
+      document.removeEventListener("mousemove", onMove);
+      document.removeEventListener("mouseup", onUp);
+    };
+    document.addEventListener("mousemove", onMove);
+    document.addEventListener("mouseup", onUp);
+  };
+  const onHscrollClickCapture = (e) => {
+    if (panRef.current.moved) {
+      e.preventDefault();
+      e.stopPropagation();
+      panRef.current.moved = false;
+    }
+  };
+
   const teamOrder = teams.map((t) => t.name);
   const focusAreaOrder = focusAreas.map((f) => f.name);
   const rank = (list, value) => {
@@ -538,7 +573,13 @@ export default function RoadmapGantt({ initiatives, focusAreas, teams, onUpsert,
             </div>
           </div>
 
-          <div className="rg-hscroll lt-scroll" ref={hscrollRef} onScroll={onHscrollScroll}>
+          <div
+            className="rg-hscroll lt-scroll"
+            ref={hscrollRef}
+            onScroll={onHscrollScroll}
+            onMouseDown={onHscrollMouseDown}
+            onClickCapture={onHscrollClickCapture}
+          >
             <div
               className="rg-grid"
               style={{
