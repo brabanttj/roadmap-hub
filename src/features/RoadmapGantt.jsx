@@ -770,9 +770,9 @@ function SidebarRow({
         </button>
         <button
           type="button"
-          className="rg-labelcell__chat"
-          aria-label={`Discuss: ${item.title}`}
-          title="Ask a question / view discussion"
+          className={`rg-labelcell__chat${item.chat?.length ? " rg-labelcell__chat--active" : ""}`}
+          aria-label={`Discuss: ${item.title}${item.chat?.length ? ` (${item.chat.length})` : ""}`}
+          title={item.chat?.length ? `${item.chat.length} message${item.chat.length === 1 ? "" : "s"}` : "Ask a question / view discussion"}
           onClick={() => setChatting(item)}
         >
           💬
